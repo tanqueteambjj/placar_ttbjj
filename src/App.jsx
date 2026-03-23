@@ -69,10 +69,10 @@ const App = () => {
 
   // Classes Dinâmicas de Estilo (Modo Claro vs Escuro)
   const themeClasses = {
-    appBg: isDarkMode ? 'bg-black text-white' : 'bg-gray-200 text-gray-900',
+    appBg: isDarkMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-900',
     navBg: isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-gray-300',
     cardBg: isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-gray-300',
-    header2Bg: isDarkMode ? 'bg-neutral-800' : 'bg-gray-800', // O lutador 2 sempre terá cabeçalho escuro para contraste da fonte
+    header2Bg: isDarkMode ? 'bg-neutral-800' : 'bg-gray-800', 
     pointsColor: isDarkMode ? 'text-white' : 'text-gray-900',
     labelColor: isDarkMode ? 'text-neutral-400' : 'text-gray-500',
     btnBg: isDarkMode ? 'bg-neutral-800 hover:bg-neutral-700 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900',
@@ -88,9 +88,9 @@ const App = () => {
     const bgHeaderColor = isGreenBelt ? 'bg-green-600' : themeClasses.header2Bg;
     
     return (
-      <div className={`flex-1 flex flex-col border-2 rounded-2xl overflow-hidden m-2 shadow-2xl ${themeClasses.cardBg}`}>
+      <div className={`flex-1 flex flex-col border-2 rounded-2xl overflow-hidden m-2 shadow-2xl transition-colors duration-300 ${themeClasses.cardBg}`}>
         {/* Cabeçalho do Lutador */}
-        <div className={`${bgHeaderColor} p-4 text-center relative flex flex-col justify-center gap-1`}>
+        <div className={`${bgHeaderColor} p-4 text-center relative flex flex-col justify-center gap-1 min-h-[120px]`}>
           <input
             type="text"
             value={data.name}
@@ -108,55 +108,55 @@ const App = () => {
               setFighter(prev => ({ ...prev, team: e.target.value.toUpperCase() }));
             }}
             placeholder="NOME DA EQUIPE"
-            className="bg-transparent text-white/90 text-lg md:text-2xl font-semibold text-center w-full focus:outline-none focus:bg-white/10 rounded px-2 placeholder:text-white/50"
+            className="bg-transparent text-white/90 text-lg md:text-2xl font-semibold text-center w-full focus:outline-none focus:bg-white/10 rounded px-2 placeholder:text-white/30"
           />
           {isGreenBelt && (
-             <div className="absolute top-0 right-0 bottom-0 w-4 bg-yellow-400"></div> // Detalhe da faixa verde/amarela
+             <div className="absolute top-0 right-0 bottom-0 w-4 bg-yellow-400"></div> 
           )}
         </div>
 
         {/* Pontuação Principal */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <span className={`text-xl font-semibold uppercase tracking-widest mb-2 ${themeClasses.labelColor}`}>Pontos</span>
-          <div className={`text-[12rem] leading-none font-black tabular-nums tracking-tighter ${themeClasses.pointsColor}`}>
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
+          <span className={`text-xl font-semibold uppercase tracking-widest mb-1 ${themeClasses.labelColor}`}>Pontos</span>
+          <div className={`text-[10rem] md:text-[14rem] leading-none font-black tabular-nums tracking-tighter ${themeClasses.pointsColor}`}>
             {data.points}
           </div>
           
           {/* Botões de Pontos */}
-          <div className="flex gap-2 mt-8 w-full justify-center">
-             <button onClick={() => updateScore(num, 'points', 2)} className={`flex-1 max-w-[80px] py-3 font-bold rounded-lg text-xl transition-colors ${themeClasses.btnBg}`}>+2</button>
-             <button onClick={() => updateScore(num, 'points', 3)} className={`flex-1 max-w-[80px] py-3 font-bold rounded-lg text-xl transition-colors ${themeClasses.btnBg}`}>+3</button>
-             <button onClick={() => updateScore(num, 'points', 4)} className={`flex-1 max-w-[80px] py-3 font-bold rounded-lg text-xl transition-colors ${themeClasses.btnBg}`}>+4</button>
-             <button onClick={() => updateScore(num, 'points', -1)} className={`flex-1 max-w-[80px] py-3 font-bold rounded-lg text-xl transition-colors ${themeClasses.btnRedBg}`}>-1</button>
+          <div className="flex gap-2 mt-4 w-full justify-center">
+             {[2, 3, 4].map(val => (
+               <button key={val} onClick={() => updateScore(num, 'points', val)} className={`flex-1 max-w-[80px] py-4 font-bold rounded-xl text-2xl transition-all active:scale-95 ${themeClasses.btnBg}`}>+{val}</button>
+             ))}
+             <button onClick={() => updateScore(num, 'points', -1)} className={`flex-1 max-w-[80px] py-4 font-bold rounded-xl text-2xl transition-all active:scale-95 ${themeClasses.btnRedBg}`}>-1</button>
           </div>
         </div>
 
         {/* Vantagens e Punições */}
-        <div className={`flex border-t h-48 ${isDarkMode ? 'border-neutral-800' : 'border-gray-200'}`}>
+        <div className={`flex border-t h-40 ${isDarkMode ? 'border-neutral-800' : 'border-gray-200'}`}>
           {/* Vantagens */}
           <div className={`flex-1 flex flex-col border-r ${themeClasses.advPenBg}`}>
-            <div className="bg-yellow-500 text-black text-center py-2 font-bold uppercase tracking-wider">Vantagens</div>
-            <div className="flex-1 flex items-center justify-between px-6">
-              <button onClick={() => updateScore(num, 'advantages', -1)} className={`p-4 rounded-full transition-transform active:scale-95 ${themeClasses.circleBtn}`}>
-                <Minus size={32} />
+            <div className="bg-yellow-500 text-black text-center py-2 font-bold uppercase tracking-wider text-sm">Vantagens</div>
+            <div className="flex-1 flex items-center justify-between px-4">
+              <button onClick={() => updateScore(num, 'advantages', -1)} className={`p-3 rounded-full transition-transform active:scale-90 ${themeClasses.circleBtn}`}>
+                <Minus size={24} />
               </button>
-              <span className="text-6xl font-bold text-yellow-500 tabular-nums drop-shadow-sm">{data.advantages}</span>
-              <button onClick={() => updateScore(num, 'advantages', 1)} className={`p-4 rounded-full transition-transform active:scale-95 ${themeClasses.circleBtn}`}>
-                <Plus size={32} />
+              <span className="text-6xl font-black text-yellow-500 tabular-nums">{data.advantages}</span>
+              <button onClick={() => updateScore(num, 'advantages', 1)} className={`p-3 rounded-full transition-transform active:scale-90 ${themeClasses.circleBtn}`}>
+                <Plus size={24} />
               </button>
             </div>
           </div>
 
           {/* Punições */}
-          <div className={`flex-1 flex flex-col ${themeClasses.advPenBg.split(' ')[0]}`}>
-            <div className="bg-red-600 text-white text-center py-2 font-bold uppercase tracking-wider">Punições</div>
-            <div className="flex-1 flex items-center justify-between px-6">
-              <button onClick={() => updateScore(num, 'penalties', -1)} className={`p-4 rounded-full transition-transform active:scale-95 ${themeClasses.circleBtn}`}>
-                <Minus size={32} />
+          <div className={`flex-1 flex flex-col ${themeClasses.advPenBg}`}>
+            <div className="bg-red-600 text-white text-center py-2 font-bold uppercase tracking-wider text-sm">Punições</div>
+            <div className="flex-1 flex items-center justify-between px-4">
+              <button onClick={() => updateScore(num, 'penalties', -1)} className={`p-3 rounded-full transition-transform active:scale-90 ${themeClasses.circleBtn}`}>
+                <Minus size={24} />
               </button>
-              <span className="text-6xl font-bold text-red-500 tabular-nums drop-shadow-sm">{data.penalties}</span>
-              <button onClick={() => updateScore(num, 'penalties', 1)} className={`p-4 rounded-full transition-transform active:scale-95 ${themeClasses.circleBtn}`}>
-                <Plus size={32} />
+              <span className="text-6xl font-black text-red-500 tabular-nums">{data.penalties}</span>
+              <button onClick={() => updateScore(num, 'penalties', 1)} className={`p-3 rounded-full transition-transform active:scale-90 ${themeClasses.circleBtn}`}>
+                <Plus size={24} />
               </button>
             </div>
           </div>
@@ -166,118 +166,68 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans select-none ${themeClasses.appBg}`}>
+    <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
       
       {/* Modal de Confirmação para Zerar */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className={`max-w-md w-full p-8 rounded-3xl shadow-2xl text-center border ${themeClasses.menuBg}`}>
-            <h2 className="text-3xl font-black mb-4">Zerar Placar?</h2>
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-md">
+          <div className={`max-w-md w-full p-8 rounded-3xl shadow-2xl text-center border-2 ${themeClasses.menuBg}`}>
+            <h2 className="text-3xl font-black mb-4">ZERAR PLACAR?</h2>
             <p className={`mb-8 text-lg ${isDarkMode ? 'text-neutral-300' : 'text-gray-600'}`}>
-              Tem a certeza que deseja repor o cronómetro, as pontuações e limpar os nomes das equipas?
+              Isso irá limpar todos os pontos, nomes e reiniciar o cronómetro.
             </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => setShowResetModal(false)}
-                className={`flex-1 py-4 rounded-xl font-bold text-lg transition-colors ${themeClasses.menuBtn}`}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  executeReset();
-                  setShowResetModal(false);
-                }}
-                className="flex-1 py-4 rounded-xl font-bold text-lg bg-red-600 hover:bg-red-500 text-white transition-colors shadow-lg shadow-red-600/20"
-              >
-                Sim, Zerar
-              </button>
+            <div className="flex gap-4">
+              <button onClick={() => setShowResetModal(false)} className={`flex-1 py-4 rounded-xl font-bold text-lg ${themeClasses.menuBtn}`}>Cancelar</button>
+              <button onClick={() => { executeReset(); setShowResetModal(false); }} className="flex-1 py-4 rounded-xl font-bold text-lg bg-red-600 hover:bg-red-500 text-white shadow-lg">Confirmar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra Superior / Cronómetro */}
-      <div className={`border-b p-4 flex items-center justify-between shadow-lg relative z-10 ${themeClasses.navBg}`}>
-        
-        {/* Logotipo ou Título */}
-        <div className="hidden md:flex items-center gap-4 font-bold text-xl tracking-widest uppercase">
-          <img 
-            src="https://iili.io/qC543c7.png" 
-            alt="Logo Tanque Team BJJ" 
-            className="h-16 w-auto object-contain drop-shadow-md"
-          />
-          <span className="mt-1">Tanque Team BJJ</span>
+      {/* Barra Superior */}
+      <div className={`border-b p-4 flex items-center justify-between shadow-xl relative z-10 transition-colors ${themeClasses.navBg}`}>
+        <div className="hidden lg:flex items-center gap-4 font-black text-xl tracking-tighter uppercase italic">
+          <img src="https://iili.io/qC543c7.png" alt="Logo" className="h-16 w-auto object-contain" />
+          <span>Tanque Team BJJ</span>
         </div>
 
-        {/* Zona Central: Tempo (Aumentado significativamente) */}
-        <div className="flex-1 flex justify-center items-center gap-8">
-          <div className={`text-[6rem] md:text-[10rem] leading-none font-black tabular-nums tracking-tighter drop-shadow-sm ${timeLeft === 0 ? 'text-red-500' : themeClasses.pointsColor}`}>
+        {/* Cronómetro Central */}
+        <div className="flex-1 flex justify-center items-center gap-4 md:gap-10">
+          <div className={`text-7xl md:text-[11rem] leading-none font-black tabular-nums tracking-tighter ${timeLeft === 0 ? 'text-red-500 animate-pulse' : themeClasses.pointsColor}`}>
             {formatTime(timeLeft)}
           </div>
           
-          <div className="flex flex-col gap-3">
-            <button 
-              onClick={toggleTimer}
-              className={`p-5 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg ${
-                isRunning ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-green-500 hover:bg-green-400 text-black'
-              }`}
-            >
+          <div className="flex flex-col gap-2">
+            <button onClick={toggleTimer} className={`p-5 rounded-full shadow-lg transition-all active:scale-90 ${isRunning ? 'bg-amber-500 text-black' : 'bg-green-500 text-black'}`}>
               {isRunning ? <Pause size={36} fill="currentColor" /> : <Play size={36} fill="currentColor" className="ml-1" />}
             </button>
-            <button 
-              onClick={() => setShowResetModal(true)}
-              className={`p-5 rounded-full transition-all hover:scale-105 shadow-lg ${themeClasses.circleBtn}`}
-              title="Zerar Luta"
-            >
-              <RotateCcw size={28} />
+            <button onClick={() => setShowResetModal(true)} className={`p-4 rounded-full shadow-lg transition-all active:scale-90 ${themeClasses.circleBtn}`}>
+              <RotateCcw size={24} />
             </button>
           </div>
         </div>
 
-        {/* Configurações e Tema */}
-        <div className="hidden md:flex items-center gap-3">
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-4 rounded-full transition-colors ${themeClasses.circleBtn}`}
-            title="Alternar Modo Claro/Escuro"
-          >
-            {isDarkMode ? <Sun size={28} /> : <Moon size={28} />}
-          </button>
-          <button 
-            onClick={() => setShowSettings(!showSettings)}
-            className={`p-4 rounded-full transition-colors ${themeClasses.circleBtn}`}
-            title="Configurações de Tempo"
-          >
-            <Settings size={28} />
-          </button>
+        {/* Controlos de Direita */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-4 rounded-full ${themeClasses.circleBtn}`}>{isDarkMode ? <Sun size={24} /> : <Moon size={24} />}</button>
+          <button onClick={() => setShowSettings(!showSettings)} className={`p-4 rounded-full ${themeClasses.circleBtn}`}><Settings size={24} /></button>
         </div>
       </div>
 
-      {/* Menu de Configurações (Dropdown) */}
+      {/* Menu Tempo */}
       {showSettings && (
-        <div className={`absolute top-28 right-4 border p-5 rounded-2xl shadow-2xl z-20 w-80 ${themeClasses.menuBg}`}>
-          <h3 className="font-bold mb-4 uppercase tracking-wider text-sm text-center">Definir Tempo de Luta</h3>
+        <div className={`absolute top-28 right-4 border-2 p-6 rounded-2xl shadow-2xl z-20 w-80 ${themeClasses.menuBg}`}>
+          <h3 className="font-black mb-4 uppercase text-center text-sm tracking-widest">Tempo de Luta</h3>
           <div className="grid grid-cols-3 gap-2">
-            {[4, 5, 6, 7, 8, 9, 10].map(mins => (
-              <button 
-                key={mins}
-                onClick={() => handleSetTime(mins)}
-                className={`py-3 rounded-xl font-bold transition-colors ${
-                  matchTime === mins * 60 
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
-                    : themeClasses.menuBtn
-                }`}
-              >
-                {mins} Min
-              </button>
+            {[4, 5, 6, 7, 8, 10].map(mins => (
+              <button key={mins} onClick={() => handleSetTime(mins)} className={`py-3 rounded-xl font-bold transition-all ${matchTime === mins * 60 ? 'bg-blue-600 text-white scale-105' : themeClasses.menuBtn}`}>{mins}m</button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Área Principal dos Lutadores */}
-      <div className="flex-1 flex flex-col lg:flex-row p-2 gap-2">
+      {/* Grid de Lutadores */}
+      <div className="flex-1 flex flex-col lg:flex-row p-2 gap-2 overflow-hidden">
         <FighterCard num={1} data={fighter1} isGreenBelt={true} />
         <FighterCard num={2} data={fighter2} isGreenBelt={false} />
       </div>
