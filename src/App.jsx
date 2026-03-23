@@ -67,7 +67,7 @@ const App = () => {
     }));
   };
 
-  // Classes Dinâmicas de Estilo
+  // Classes Dinâmicas de Estilo (Uso de Zinc para melhor compatibilidade com CDN)
   const themeClasses = {
     appBg: isDarkMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-900',
     navBg: isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-300',
@@ -88,7 +88,7 @@ const App = () => {
     
     return (
       <div className={`flex-1 flex flex-col border-2 rounded-2xl overflow-hidden m-2 shadow-2xl transition-all duration-300 ${themeClasses.cardBg}`}>
-        <div className={`${bgHeaderColor} p-4 text-center relative flex flex-col justify-center gap-1 min-h-[130px]`}>
+        <div className={`${bgHeaderColor} p-4 text-center relative flex flex-col justify-center gap-1 min-h-[140px]`}>
           <input
             type="text"
             value={data.name}
@@ -106,7 +106,7 @@ const App = () => {
               setFighter(prev => ({ ...prev, team: e.target.value.toUpperCase() }));
             }}
             placeholder="NOME DA EQUIPE"
-            className="bg-transparent text-white/90 text-xl md:text-2xl font-bold text-center w-full focus:outline-none focus:bg-white/10 rounded px-2 placeholder:text-white/30"
+            className="bg-transparent text-white/90 text-xl md:text-2xl font-bold text-center w-full focus:outline-none focus:bg-white/10 rounded px-2 placeholder:text-white/20"
           />
           {isGreenBelt && <div className="absolute top-0 right-0 bottom-0 w-4 bg-yellow-400"></div>}
         </div>
@@ -119,28 +119,28 @@ const App = () => {
           
           <div className="flex gap-2 mt-4 w-full justify-center">
              {[2, 3, 4].map(val => (
-               <button key={val} onClick={() => updateScore(num, 'points', val)} className={`flex-1 max-w-[90px] py-5 font-black rounded-xl text-3xl transition-all active:scale-95 shadow-md ${themeClasses.btnBg}`}>+{val}</button>
+               <button key={val} onClick={() => updateScore(num, 'points', val)} className={`flex-1 max-w-[90px] py-6 font-black rounded-xl text-3xl transition-all active:scale-95 shadow-md ${themeClasses.btnBg}`}>+{val}</button>
              ))}
-             <button onClick={() => updateScore(num, 'points', -1)} className={`flex-1 max-w-[90px] py-5 font-black rounded-xl text-3xl transition-all active:scale-95 shadow-md ${themeClasses.btnRedBg}`}>-1</button>
+             <button onClick={() => updateScore(num, 'points', -1)} className={`flex-1 max-w-[90px] py-6 font-black rounded-xl text-3xl transition-all active:scale-95 shadow-md ${themeClasses.btnRedBg}`}>-1</button>
           </div>
         </div>
 
         <div className={`flex border-t h-44 ${isDarkMode ? 'border-zinc-800' : 'border-gray-200'}`}>
           <div className={`flex-1 flex flex-col border-r ${themeClasses.advPenBg}`}>
             <div className="bg-yellow-500 text-black text-center py-2 font-black uppercase tracking-widest text-xs">Vantagens</div>
-            <div className="flex-1 flex items-center justify-between px-4">
-              <button onClick={() => updateScore(num, 'advantages', -1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Minus size={24} /></button>
+            <div className="flex-1 flex items-center justify-between px-6">
+              <button onClick={() => updateScore(num, 'advantages', -1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Minus size={28} /></button>
               <span className="text-7xl font-black text-yellow-500 tabular-nums">{data.advantages}</span>
-              <button onClick={() => updateScore(num, 'advantages', 1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Plus size={24} /></button>
+              <button onClick={() => updateScore(num, 'advantages', 1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Plus size={28} /></button>
             </div>
           </div>
 
           <div className={`flex-1 flex flex-col ${themeClasses.advPenBg}`}>
             <div className="bg-red-600 text-white text-center py-2 font-black uppercase tracking-widest text-xs">Punições</div>
-            <div className="flex-1 flex items-center justify-between px-4">
-              <button onClick={() => updateScore(num, 'penalties', -1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Minus size={24} /></button>
+            <div className="flex-1 flex items-center justify-between px-6">
+              <button onClick={() => updateScore(num, 'penalties', -1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Minus size={28} /></button>
               <span className="text-7xl font-black text-red-500 tabular-nums">{data.penalties}</span>
-              <button onClick={() => updateScore(num, 'penalties', 1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Plus size={24} /></button>
+              <button onClick={() => updateScore(num, 'penalties', 1)} className={`p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Plus size={28} /></button>
             </div>
           </div>
         </div>
@@ -152,11 +152,11 @@ const App = () => {
     <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
       
       {showResetModal && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-md">
-          <div className={`max-w-md w-full p-10 rounded-[2rem] shadow-2xl text-center border-2 ${themeClasses.menuBg}`}>
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-md">
+          <div className={`max-w-md w-full p-10 rounded-[2.5rem] shadow-2xl text-center border-2 ${themeClasses.menuBg}`}>
             <h2 className="text-4xl font-black mb-4 tracking-tighter">ZERAR PLACAR?</h2>
             <p className={`mb-10 text-xl font-medium ${isDarkMode ? 'text-zinc-300' : 'text-gray-600'}`}>
-              Deseja limpar todos os dados da luta atual?
+              Todos os dados da luta atual serão perdidos.
             </p>
             <div className="flex gap-4">
               <button onClick={() => setShowResetModal(false)} className={`flex-1 py-5 rounded-2xl font-bold text-xl ${themeClasses.menuBtn}`}>Cancelar</button>
@@ -166,48 +166,48 @@ const App = () => {
         </div>
       )}
 
-      <div className={`border-b p-5 flex items-center justify-between shadow-2xl relative z-10 transition-colors ${themeClasses.navBg}`}>
+      <div className={`border-b p-6 flex items-center justify-between shadow-2xl relative z-10 transition-colors ${themeClasses.navBg}`}>
         <div className="hidden xl:flex items-center gap-5 font-black text-2xl tracking-tighter uppercase italic">
-          <img src="https://iili.io/qC543c7.png" alt="Logo" className="h-20 w-auto object-contain drop-shadow-lg" />
+          <img src="https://iili.io/qC543c7.png" alt="Logo" className="h-24 w-auto object-contain drop-shadow-2xl" />
           <div className="flex flex-col leading-none">
-            <span className="text-blue-600">Tanque Team</span>
-            <span className="text-sm tracking-[0.3em] opacity-50">Jiu-Jitsu</span>
+            <span className="text-blue-600 text-3xl">Tanque Team</span>
+            <span className="text-sm tracking-[0.4em] opacity-40">Jiu-Jitsu Profissional</span>
           </div>
         </div>
 
-        <div className="flex-1 flex justify-center items-center gap-6 md:gap-14">
-          <div className={`text-8xl md:text-[13rem] leading-none font-black tabular-nums tracking-tighter ${timeLeft === 0 ? 'text-red-500 animate-pulse' : themeClasses.pointsColor}`}>
+        <div className="flex-1 flex justify-center items-center gap-10 md:gap-20">
+          <div className={`text-9xl md:text-[15rem] leading-none font-black tabular-nums tracking-tighter drop-shadow-sm ${timeLeft === 0 ? 'text-red-500 animate-pulse' : themeClasses.pointsColor}`}>
             {formatTime(timeLeft)}
           </div>
           
-          <div className="flex flex-col gap-3">
-            <button onClick={toggleTimer} className={`p-6 rounded-full shadow-2xl transition-all active:scale-90 hover:scale-105 ${isRunning ? 'bg-amber-500 text-black' : 'bg-green-500 text-black'}`}>
-              {isRunning ? <Pause size={44} fill="currentColor" /> : <Play size={44} fill="currentColor" className="ml-1" />}
+          <div className="flex flex-col gap-4">
+            <button onClick={toggleTimer} className={`p-7 rounded-full shadow-2xl transition-all active:scale-90 hover:scale-105 ${isRunning ? 'bg-amber-500 text-black' : 'bg-green-500 text-black'}`}>
+              {isRunning ? <Pause size={52} fill="currentColor" /> : <Play size={52} fill="currentColor" className="ml-1" />}
             </button>
-            <button onClick={() => setShowResetModal(true)} className={`p-5 rounded-full shadow-xl transition-all active:scale-90 hover:scale-105 ${themeClasses.circleBtn}`}>
-              <RotateCcw size={28} />
+            <button onClick={() => setShowResetModal(true)} className={`p-6 rounded-full shadow-xl transition-all active:scale-90 hover:scale-105 ${themeClasses.circleBtn}`}>
+              <RotateCcw size={32} />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-5 rounded-full shadow-lg ${themeClasses.circleBtn}`}>{isDarkMode ? <Sun size={28} /> : <Moon size={28} />}</button>
-          <button onClick={() => setShowSettings(!showSettings)} className={`p-5 rounded-full shadow-lg ${themeClasses.circleBtn}`}><Settings size={28} /></button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-6 rounded-full shadow-lg ${themeClasses.circleBtn}`}>{isDarkMode ? <Sun size={32} /> : <Moon size={32} />}</button>
+          <button onClick={() => setShowSettings(!showSettings)} className={`p-6 rounded-full shadow-lg ${themeClasses.circleBtn}`}><Settings size={32} /></button>
         </div>
       </div>
 
       {showSettings && (
-        <div className={`absolute top-32 right-6 border-2 p-8 rounded-[2rem] shadow-2xl z-20 w-96 ${themeClasses.menuBg}`}>
-          <h3 className="font-black mb-6 uppercase text-center text-sm tracking-[0.2em] opacity-70">Duração do Combate</h3>
-          <div className="grid grid-cols-3 gap-3">
+        <div className={`absolute top-36 right-8 border-2 p-10 rounded-[2.5rem] shadow-2xl z-20 w-[24rem] ${themeClasses.menuBg}`}>
+          <h3 className="font-black mb-8 uppercase text-center text-sm tracking-[0.3em] opacity-60">Duração do Combate</h3>
+          <div className="grid grid-cols-3 gap-4">
             {[4, 5, 6, 7, 8, 10].map(mins => (
-              <button key={mins} onClick={() => handleSetTime(mins)} className={`py-4 rounded-2xl font-black text-lg transition-all ${matchTime === mins * 60 ? 'bg-blue-600 text-white scale-105 shadow-lg' : themeClasses.menuBtn}`}>{mins}m</button>
+              <button key={mins} onClick={() => handleSetTime(mins)} className={`py-5 rounded-2xl font-black text-xl transition-all ${matchTime === mins * 60 ? 'bg-blue-600 text-white scale-110 shadow-xl' : themeClasses.menuBtn}`}>{mins}m</button>
             ))}
           </div>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col lg:flex-row p-3 gap-3 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
         <FighterCard num={1} data={fighter1} isGreenBelt={true} />
         <FighterCard num={2} data={fighter2} isGreenBelt={false} />
       </div>
