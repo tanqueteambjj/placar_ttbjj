@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-
 <html lang="pt-br">
-<head>
-<meta charset="UTF-8" />
-<link rel="icon" type="image/svg+xml" href="/vite.svg" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Placar Tanque Team BJJ</title>
-<!-- Carrega o Tailwind CSS via CDN (Necessário para o visual profissional) -->
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-<div id="root"></div>
-
-<!-- ESTA LINHA ABAIXO É OBRIGATÓRIA: ela liga o HTML ao seu código React (Canvas) -->
-<script type="module" src="/src/main.jsx"></script>
-
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="https://iili.io/qC543c7.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Placar Tanque Team BJJ</title>
+    <!-- Carrega o Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @media print {
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        body { background: white !important; color: black !important; }
+      }
+      .print-only { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
