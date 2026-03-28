@@ -129,8 +129,8 @@ const App = () => {
   return (
     <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
       
-      {/* Relatório de Impressão (Otimizado para 1 página) */}
-      <div className="hidden print:block p-4 text-black bg-white min-h-screen border-[8px] border-double border-zinc-300">
+      {/* Relatório de Impressão (Otimizado para 1 página e com Assinaturas no Rodapé) */}
+      <div className="hidden print:flex flex-col p-4 text-black bg-white min-h-screen border-[8px] border-double border-zinc-300">
         <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-4">
           <img src="https://iili.io/qC543c7.png" alt="Logo" className="h-20 w-auto" />
           <div className="text-right">
@@ -150,7 +150,8 @@ const App = () => {
           </div>
         </div>
 
-        <div className="space-y-6 relative">
+        {/* Esta div com flex-1 empurra o rodapé para o fim da página */}
+        <div className="flex-1 space-y-6 relative">
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
              <Trophy size={400} />
           </div>
@@ -202,7 +203,8 @@ const App = () => {
           </div>
         </div>
 
-        <div className="mt-20 flex justify-between items-end">
+        {/* Rodapé fixado em baixo com mt-auto */}
+        <div className="mt-auto pt-20 pb-4 flex justify-between items-end">
           <div className="w-48 border-t border-black pt-1 text-center text-[10px] font-bold uppercase">Assinatura Árbitro</div>
           <div className="text-center italic font-bold text-zinc-400 text-[10px]">
             Tanque Team BJJ - Sistema Oficial de Competição
