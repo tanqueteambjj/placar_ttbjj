@@ -14,7 +14,6 @@ const FighterCard = ({ num, data, setFighter, isGreenBelt, isDarkMode, themeClas
 
   return (
     <div className={`flex-1 flex flex-col border-2 rounded-2xl overflow-hidden m-2 shadow-2xl transition-all duration-300 ${themeClasses.cardBg}`}>
-      {/* Cabeçalho do Atleta */}
       <div className={`${bgHeaderColor} p-4 text-center relative flex flex-col justify-center gap-1 min-h-[140px]`}>
         <input
           type="text"
@@ -33,7 +32,6 @@ const FighterCard = ({ num, data, setFighter, isGreenBelt, isDarkMode, themeClas
         {isGreenBelt && <div className="absolute top-0 right-0 bottom-0 w-4 bg-yellow-400"></div>}
       </div>
 
-      {/* Pontuação Principal */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <span className={`text-xl font-bold uppercase tracking-[0.2em] mb-1 ${themeClasses.labelColor}`}>Pontos</span>
         <div className={`text-[12rem] md:text-[15rem] leading-none font-black tabular-nums tracking-tighter ${themeClasses.pointsColor}`}>
@@ -48,7 +46,6 @@ const FighterCard = ({ num, data, setFighter, isGreenBelt, isDarkMode, themeClas
         </div>
       </div>
 
-      {/* Vantagens e Punições */}
       <div className={`flex border-t h-44 ${isDarkMode ? 'border-zinc-800' : 'border-gray-200'}`}>
         <div className={`flex-1 flex flex-col border-r ${themeClasses.advPenBg}`}>
           <div className="bg-yellow-500 text-black text-center py-2 font-black uppercase tracking-widest text-xs">Vantagens</div>
@@ -132,50 +129,49 @@ const App = () => {
   return (
     <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
       
-      {/* Relatório de Impressão (Melhorado) */}
-      <div className="hidden print:block p-8 text-black bg-white min-h-screen border-[12px] border-double border-zinc-200">
-        <div className="flex items-center justify-between border-b-4 border-black pb-6 mb-10">
-          <img src="https://iili.io/qC543c7.png" alt="Logo" className="h-32 w-auto" />
+      {/* Relatório de Impressão (Otimizado para 1 página) */}
+      <div className="hidden print:block p-4 text-black bg-white min-h-screen border-[8px] border-double border-zinc-300">
+        <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-4">
+          <img src="https://iili.io/qC543c7.png" alt="Logo" className="h-20 w-auto" />
           <div className="text-right">
-            <h1 className="text-5xl font-black tracking-tighter mb-1">BOLETIM DE LUTA</h1>
-            <p className="text-2xl font-bold text-zinc-600">TANQUE TEAM BJJ</p>
+            <h1 className="text-3xl font-black tracking-tighter mb-0">BOLETIM DE LUTA</h1>
+            <p className="text-lg font-bold text-zinc-600">TANQUE TEAM BJJ</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-8 mb-12">
-          <div className="bg-zinc-50 p-6 border-l-8 border-black">
-            <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">CATEGORIA</p>
-            <p className="text-2xl font-black">{category || 'GERAL / ABSOLUTO'}</p>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-zinc-50 p-3 border-l-4 border-black">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">CATEGORIA</p>
+            <p className="text-xl font-black">{category || 'GERAL / ABSOLUTO'}</p>
           </div>
-          <div className="bg-zinc-50 p-6 border-r-8 border-black text-right">
-            <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">DURAÇÃO</p>
-            <p className="text-2xl font-black">{matchTime / 60} MINUTOS</p>
+          <div className="bg-zinc-50 p-3 border-r-4 border-black text-right">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">DURAÇÃO</p>
+            <p className="text-xl font-black">{matchTime / 60} MINUTOS</p>
           </div>
         </div>
 
-        <div className="space-y-10 relative">
-          {/* Marca d'água de fundo */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-             <Trophy size={500} />
+        <div className="space-y-6 relative">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
+             <Trophy size={400} />
           </div>
 
-          <div className="grid grid-cols-2 gap-10 relative z-10">
+          <div className="grid grid-cols-2 gap-6 relative z-10">
             {/* Lutador 1 */}
-            <div className="border-4 border-black p-8 rounded-3xl bg-white shadow-lg">
-              <div className="border-b-4 border-green-600 mb-6 pb-2">
-                <h2 className="text-4xl font-black leading-none">{fighter1.name || 'LUTADOR 1'}</h2>
-                <p className="text-xl font-bold text-zinc-500 mt-2 uppercase">{fighter1.team || 'EQUIPE'}</p>
+            <div className="border-2 border-black p-4 rounded-2xl bg-white shadow-sm">
+              <div className="border-b-2 border-green-600 mb-4 pb-1">
+                <h2 className="text-2xl font-black leading-none">{fighter1.name || 'LUTADOR 1'}</h2>
+                <p className="text-base font-bold text-zinc-500 mt-1 uppercase">{fighter1.team || 'EQUIPE'}</p>
               </div>
-              <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-end border-b border-zinc-200 pb-2">
-                  <span className="text-xl font-bold text-zinc-400">PONTOS</span>
-                  <span className="text-8xl font-black leading-none">{fighter1.points}</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-end border-b border-zinc-100 pb-1">
+                  <span className="text-sm font-bold text-zinc-400">PONTOS</span>
+                  <span className="text-6xl font-black leading-none">{fighter1.points}</span>
                 </div>
-                <div className="flex justify-between text-2xl font-bold">
+                <div className="flex justify-between text-lg font-bold">
                   <span>VANTAGENS</span>
                   <span>{fighter1.advantages}</span>
                 </div>
-                <div className="flex justify-between text-2xl font-bold text-red-600">
+                <div className="flex justify-between text-lg font-bold text-red-600">
                   <span>PUNIÇÕES</span>
                   <span>{fighter1.penalties}</span>
                 </div>
@@ -183,21 +179,21 @@ const App = () => {
             </div>
 
             {/* Lutador 2 */}
-            <div className="border-4 border-black p-8 rounded-3xl bg-white shadow-lg text-right">
-              <div className="border-b-4 border-zinc-800 mb-6 pb-2">
-                <h2 className="text-4xl font-black leading-none">{fighter2.name || 'LUTADOR 2'}</h2>
-                <p className="text-xl font-bold text-zinc-500 mt-2 uppercase">{fighter2.team || 'EQUIPE'}</p>
+            <div className="border-2 border-black p-4 rounded-2xl bg-white shadow-sm text-right">
+              <div className="border-b-2 border-zinc-800 mb-4 pb-1">
+                <h2 className="text-2xl font-black leading-none">{fighter2.name || 'LUTADOR 2'}</h2>
+                <p className="text-base font-bold text-zinc-500 mt-1 uppercase">{fighter2.team || 'EQUIPE'}</p>
               </div>
-              <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-end border-b border-zinc-200 pb-2 flex-row-reverse">
-                  <span className="text-xl font-bold text-zinc-400">PONTOS</span>
-                  <span className="text-8xl font-black leading-none">{fighter2.points}</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-end border-b border-zinc-100 pb-1 flex-row-reverse">
+                  <span className="text-sm font-bold text-zinc-400">PONTOS</span>
+                  <span className="text-6xl font-black leading-none">{fighter2.points}</span>
                 </div>
-                <div className="flex justify-between text-2xl font-bold flex-row-reverse">
+                <div className="flex justify-between text-lg font-bold flex-row-reverse">
                   <span>VANTAGENS</span>
                   <span>{fighter2.advantages}</span>
                 </div>
-                <div className="flex justify-between text-2xl font-bold text-red-600 flex-row-reverse">
+                <div className="flex justify-between text-lg font-bold text-red-600 flex-row-reverse">
                   <span>PUNIÇÕES</span>
                   <span>{fighter2.penalties}</span>
                 </div>
@@ -206,12 +202,12 @@ const App = () => {
           </div>
         </div>
 
-        <div className="mt-32 flex justify-between items-end">
-          <div className="w-64 border-t-2 border-black pt-2 text-center text-sm font-bold uppercase">Assinatura Árbitro</div>
-          <div className="text-center italic font-bold text-zinc-400">
+        <div className="mt-20 flex justify-between items-end">
+          <div className="w-48 border-t border-black pt-1 text-center text-[10px] font-bold uppercase">Assinatura Árbitro</div>
+          <div className="text-center italic font-bold text-zinc-400 text-[10px]">
             Tanque Team BJJ - Sistema Oficial de Competição
           </div>
-          <div className="w-64 border-t-2 border-black pt-2 text-center text-sm font-bold uppercase">Responsável Mesa</div>
+          <div className="w-48 border-t border-black pt-1 text-center text-[10px] font-bold uppercase">Responsável Mesa</div>
         </div>
       </div>
 
@@ -247,12 +243,12 @@ const App = () => {
           </div>
         )}
 
-        {/* Modal Reset (Com Opção de Impressão) */}
+        {/* Modal Reset */}
         {showResetModal && (
           <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-md">
             <div className={`max-w-lg w-full p-10 rounded-[2.5rem] shadow-2xl text-center border-2 ${themeClasses.menuBg}`}>
               <div className="flex justify-center mb-6">
-                <RotateCcw size={64} className="text-red-500 animate-spin-slow" />
+                <RotateCcw size={64} className="text-red-500" />
               </div>
               <h2 className="text-4xl font-black mb-4 tracking-tighter">ZERAR TUDO?</h2>
               <p className={`mb-10 text-xl font-medium ${isDarkMode ? 'text-zinc-300' : 'text-gray-600'}`}>Deseja imprimir o resultado antes de limpar o placar?</p>
@@ -303,7 +299,7 @@ const App = () => {
           </div>
         </div>
 
-        {/* Menu Settings (Com Backdrop para fechar fácil) */}
+        {/* Menu Settings */}
         {showSettings && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setShowSettings(false)}></div>
