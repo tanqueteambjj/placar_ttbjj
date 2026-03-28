@@ -1,19 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, UserPlus, X, Trophy } from 'lucide-react';
 
-// Componente do Lutador - Fora do App para manter o foco ao digitar
-const FighterCard = ({ num, data, setFighter, isGreenBelt, isDarkMode, themeClasses }) => {
+// Componente do Lutador
+const FighterCard = ({ num, data, setFighter, updateScore, isGreenBelt, isDarkMode, themeClasses }) => {
   const bgHeaderColor = isGreenBelt ? 'bg-green-600' : themeClasses.header2Bg;
-  
-  const updateScore = (type, value) => {
-    setFighter(prev => ({
-      ...prev,
-      [type]: Math.max(0, prev[type] + value)
-    }));
-  };
 
   return (
-    <div className={`flex-1 flex flex-col border-2 rounded-2xl overflow-hidden m-2 shadow-2xl transition-all duration-300 ${themeClasses.cardBg}`}>
+    <div className={`flex-1 flex flex-col border-2 rounded-2xl overflow-hidden m-2 shadow-2xl transition-all duration-300 relative ${themeClasses.cardBg}`}>
+      
+      {/* Overlay de Desclassificação (DQ) */}
+      {data.penalties >= 4 && (
+        <div className="absolute inset-0 z-50 bg-red-600/95 flex flex-col items-center justify-center backdrop-blur-sm print:hidden">
+          <span className="text-white text-[8rem] font-black tracking-tighter leading-none mb-2 drop-shadow-2xl">DQ</span>
+          <span className="text-white text-3xl font-bold tracking-widest mb-8 drop-shadow-lg">DESCLASSIFICADO</span>
+          <button 
+            onClick={() => updateScore('penalties', -1)} 
+            className="bg-black/40 text-white px-8 py-4 rounded-full font-black text-xl hover:bg-black/60 transition-all active:scale-95 border-2 border-white/20"
+          >
+            DESFAZER PUNIÇÃO
+          </button>
+        </div>
+      )}
+
       <div className={`${bgHeaderColor} p-4 text-center relative flex flex-col justify-center gap-1 min-h-[140px]`}>
         <input
           type="text"
@@ -82,6 +90,43 @@ const App = () => {
   const initialFighterState = { name: '', team: '', points: 0, advantages: 0, penalties: 0 };
   const [fighter1, setFighter1] = useState({ ...initialFighterState, name: 'LUTADOR 1' });
   const [fighter2, setFighter2] = useState({ ...initialFighterState, name: 'LUTADOR 2' });
+
+  // Nova Lógica de Pontuação Centralizada (Com automação de punições)
+  const updateFighterScore = useCallback((fighterNum, type, value) => {
+    const isF1 = fighterNum === 1;
+    const setFighter = isF1 ? setFighter1 : setFighter2;
+    const setOpponent = isF1 ? setFighter2 : setFighter1;
+
+    setFighter(prev => {
+      const newValue = Math.max(0, prev[type] + value);
+      
+      // Regras automáticas de punição da IBJJF
+      if (type === 'penalties') {
+        if (value > 0) {
+          // Adicionando punição
+          if (newValue === 2) {
+            // 2ª Punição = Vantagem para o oponente
+            setOpponent(opp => ({ ...opp, advantages: opp.advantages + 1 }));
+          } else if (newValue === 3) {
+            // 3ª Punição = 2 Pontos para o oponente
+            setOpponent(opp => ({ ...opp, points: opp.points + 2 }));
+          }
+          // A 4ª punição altera o estado local para 4, ativando a tela de DQ (Desclassificação)
+        } else if (value < 0) {
+          // Removendo punição (Desfazendo em caso de erro)
+          if (prev.penalties === 2) {
+            // Remove a vantagem que foi dada ao oponente
+            setOpponent(opp => ({ ...opp, advantages: Math.max(0, opp.advantages - 1) }));
+          } else if (prev.penalties === 3) {
+            // Remove os 2 pontos que foram dados ao oponente
+            setOpponent(opp => ({ ...opp, points: Math.max(0, opp.points - 2) }));
+          }
+        }
+      }
+
+      return { ...prev, [type]: newValue };
+    });
+  }, []);
 
   useEffect(() => {
     let interval = null;
@@ -177,6 +222,7 @@ const App = () => {
                   <span>{fighter1.penalties}</span>
                 </div>
               </div>
+              {fighter1.penalties >= 4 && <div className="mt-4 bg-red-600 text-white font-black text-center py-2 uppercase tracking-widest text-sm rounded">Desclassificado (DQ)</div>}
             </div>
 
             {/* Lutador 2 */}
@@ -199,6 +245,7 @@ const App = () => {
                   <span>{fighter2.penalties}</span>
                 </div>
               </div>
+              {fighter2.penalties >= 4 && <div className="mt-4 bg-red-600 text-white font-black text-center py-2 uppercase tracking-widest text-sm rounded">Desclassificado (DQ)</div>}
             </div>
           </div>
         </div>
@@ -323,8 +370,24 @@ const App = () => {
         )}
 
         <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
-          <FighterCard num={1} data={fighter1} setFighter={setFighter1} isGreenBelt={true} isDarkMode={isDarkMode} themeClasses={themeClasses} />
-          <FighterCard num={2} data={fighter2} setFighter={setFighter2} isGreenBelt={false} isDarkMode={isDarkMode} themeClasses={themeClasses} />
+          <FighterCard 
+            num={1} 
+            data={fighter1} 
+            setFighter={setFighter1} 
+            updateScore={(type, val) => updateFighterScore(1, type, val)} 
+            isGreenBelt={true} 
+            isDarkMode={isDarkMode} 
+            themeClasses={themeClasses} 
+          />
+          <FighterCard 
+            num={2} 
+            data={fighter2} 
+            setFighter={setFighter2} 
+            updateScore={(type, val) => updateFighterScore(2, type, val)} 
+            isGreenBelt={false} 
+            isDarkMode={isDarkMode} 
+            themeClasses={themeClasses} 
+          />
         </div>
       </div>
     </div>
