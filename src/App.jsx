@@ -237,7 +237,7 @@ const LoginScreen = ({ onGuestLogin }) => {
 // 3. Tela de Fila / Lutas (Dashboard)
 const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, fightHistory }) => {
   const [activeTab, setActiveTab] = useState('fights'); 
-  const [newFight, setNewFight] = useState({ category: '', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
+  const [newFight, setNewFight] = useState({ category: '', belt: '', gender: '', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -259,7 +259,7 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
 
     if (queue.length >= 10) return alert("Limite de 10 lutas atingido na fila.");
     setQueue([...queue, { ...newFight, id: Date.now(), status: 'pending' }]);
-    setNewFight({ category: '', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
+    setNewFight({ category: '', belt: '', gender: '', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
   };
 
   const removeFight = (id) => setQueue(queue.filter(f => f.id !== id));
@@ -568,12 +568,31 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
               </h2>
               
               <form onSubmit={handleAddFight} className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Categoria / Peso / Faixa</label>
-                  <input required value={newFight.category} onChange={e => setNewFight({...newFight, category: e.target.value.toUpperCase()})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase" placeholder="Ex: ADULTO AZUL" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
+                  <div className="col-span-full">
+                    <input value={newFight.category} onChange={e => setNewFight({...newFight, category: e.target.value.toUpperCase()})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm" placeholder="CATEGORIA / PESO (OPCIONAL)" />
+                  </div>
+                  <div>
+                    <select value={newFight.belt} onChange={e => setNewFight({...newFight, belt: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-zinc-400 cursor-pointer">
+                      <option value="">FAIXA (OPCIONAL)</option>
+                      <option value="BRANCA">BRANCA</option>
+                      <option value="AZUL">AZUL</option>
+                      <option value="ROXA">ROXA</option>
+                      <option value="MARROM">MARROM</option>
+                      <option value="PRETA">PRETA</option>
+                      <option value="SUBMISSION - NOGI">SUBMISSION - NOGI</option>
+                    </select>
+                  </div>
+                  <div>
+                    <select value={newFight.gender} onChange={e => setNewFight({...newFight, gender: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-zinc-400 cursor-pointer">
+                      <option value="">SEXO (OPCIONAL)</option>
+                      <option value="MASCULINO">MASCULINO</option>
+                      <option value="FEMININO">FEMININO</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="p-4 bg-zinc-950 rounded-2xl border-l-4 border-green-600 space-y-3">
+                <div className="p-4 bg-zinc-950 rounded-2xl border-l-4 border-green-600 space-y-3 mt-4">
                   <span className="text-xs font-black text-green-600 uppercase tracking-widest">Lutador 1 (Verde)</span>
                   <input required value={newFight.f1Name} onChange={e => setNewFight({...newFight, f1Name: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="NOME" />
                   <input required value={newFight.f1Team} onChange={e => setNewFight({...newFight, f1Team: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="EQUIPE" />
@@ -618,7 +637,9 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
                       
                       <div className="flex-1 w-full text-center md:text-left grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
                         <div className="md:col-span-3 pb-2 border-b border-zinc-800/50 mb-1">
-                          <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{fight.category}</span>
+                          <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
+                            {[fight.category, fight.belt, fight.gender].filter(Boolean).join(' • ') || 'SEM CATEGORIA'}
+                          </span>
                         </div>
                         
                         <div className="text-right pr-4 border-r-0 md:border-r border-zinc-800">
@@ -679,7 +700,7 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
                 {fightHistory.map(record => (
                   <div key={record.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 opacity-80 hover:opacity-100 transition-opacity">
                     <div className="text-[10px] text-zinc-500 font-black tracking-widest uppercase mb-2 border-b border-zinc-800 pb-2 flex justify-between">
-                      <span className="truncate pr-2">{record.category || 'SEM CATEGORIA'}</span>
+                      <span className="truncate pr-2">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || 'SEM CATEGORIA'}</span>
                       <span className="shrink-0">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                     </div>
                     <div className="flex justify-between items-center mb-2">
@@ -709,6 +730,8 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
   const [isDarkMode, setIsDarkMode] = useState(true);
   
   const [category, setCategory] = useState(initialFightData?.category || '');
+  const [belt, setBelt] = useState(initialFightData?.belt || '');
+  const [gender, setGender] = useState(initialFightData?.gender || '');
 
   const initialFighter1 = { name: initialFightData?.f1Name || '', team: initialFightData?.f1Team || '', points: 0, advantages: 0, penalties: 0 };
   const initialFighter2 = { name: initialFightData?.f2Name || '', team: initialFightData?.f2Team || '', points: 0, advantages: 0, penalties: 0 };
@@ -718,7 +741,9 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
 
   useEffect(() => {
     if(initialFightData) {
-      setCategory(initialFightData.category);
+      setCategory(initialFightData.category || '');
+      setBelt(initialFightData.belt || '');
+      setGender(initialFightData.gender || '');
       setFighter1({ ...initialFighter1, name: initialFightData.f1Name, team: initialFightData.f1Team });
       setFighter2({ ...initialFighter2, name: initialFightData.f2Name, team: initialFightData.f2Team });
       
@@ -769,6 +794,8 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
   const handleCompleteFight = (action) => {
     const scoreData = {
       category,
+      belt,
+      gender,
       f1: { ...fighter1 },
       f2: { ...fighter2 }
     };
@@ -819,8 +846,10 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-zinc-50 p-3 border-l-4 border-black">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">CATEGORIA</p>
-            <p className="text-xl font-black uppercase">{category || 'GERAL / ABSOLUTO'}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">CATEGORIA / FAIXA / SEXO</p>
+            <p className="text-xl font-black uppercase leading-tight">
+              {[category, belt, gender].filter(Boolean).join(' • ') || 'GERAL / ABSOLUTO'}
+            </p>
           </div>
           <div className="bg-zinc-50 p-3 border-r-4 border-black text-right">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">DURAÇÃO</p>
@@ -898,9 +927,25 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
             </button>
             <div className="flex items-center border-l border-zinc-800 pl-6 py-1">
                <img src={logoUrl} alt="Logo" className="h-20 md:h-24 w-auto object-contain mr-6 drop-shadow-lg" />
-               <div className="flex flex-col">
-                 <span className="text-blue-500 font-black text-xs uppercase tracking-widest mb-1">Categoria em Disputa</span>
-                 <input type="text" placeholder="CATEGORIA" value={category} onChange={(e) => setCategory(e.target.value.toUpperCase())} className="text-3xl lg:text-4xl bg-transparent focus:outline-none border-b-2 border-transparent focus:border-blue-600 uppercase font-black w-full tracking-tighter" />
+               <div className="flex flex-col gap-1 w-full">
+                 <input type="text" placeholder="CATEGORIA / PESO" value={category} onChange={(e) => setCategory(e.target.value.toUpperCase())} className="text-2xl lg:text-3xl bg-transparent focus:outline-none border-b-2 border-transparent focus:border-blue-600 uppercase font-black w-full tracking-tighter leading-none" />
+                 <div className="flex items-center gap-2 mt-1">
+                    <select value={belt} onChange={e => setBelt(e.target.value)} className="bg-transparent text-sm text-zinc-500 focus:text-blue-500 uppercase font-bold outline-none cursor-pointer">
+                      <option value="">FAIXA...</option>
+                      <option value="BRANCA">BRANCA</option>
+                      <option value="AZUL">AZUL</option>
+                      <option value="ROXA">ROXA</option>
+                      <option value="MARROM">MARROM</option>
+                      <option value="PRETA">PRETA</option>
+                      <option value="SUBMISSION - NOGI">SUBMISSION - NOGI</option>
+                    </select>
+                    <span className="text-zinc-700">•</span>
+                    <select value={gender} onChange={e => setGender(e.target.value)} className="bg-transparent text-sm text-zinc-500 focus:text-blue-500 uppercase font-bold outline-none cursor-pointer">
+                      <option value="">SEXO...</option>
+                      <option value="MASCULINO">MASCULINO</option>
+                      <option value="FEMININO">FEMININO</option>
+                    </select>
+                 </div>
                </div>
             </div>
           </div>
