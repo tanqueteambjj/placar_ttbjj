@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2 } from 'lucide-react';
 
 // === CONFIGURAÇÃO DO FIREBASE ===
 import { initializeApp } from "firebase/app";
@@ -38,9 +38,25 @@ const ADMIN_EMAILS = [
 
 const MP_ACCESS_TOKEN = "APP_USR-1453261259159538-031413-5e6302200ef4532780a4d37d4f0975c3-3264813133";
 
-// Constantes de Faixas
+// Constantes de Faixas e Fases
 const BELTS = ["BRANCA", "CINZA", "AMARELA", "LARANJA", "VERDE", "AZUL", "ROXA", "MARROM", "PRETA", "SUBMISSION - NOGI"];
-const PHASES = ["FASE DE GRUPOS", "OITAVAS DE FINAL", "QUARTAS DE FINAL", "SEMI-FINAL", "FINAL", "DISPUTA 3º LUGAR"];
+const PHASES = ["LUTA LIVRE", "FASE DE GRUPOS", "OITAVAS DE FINAL", "QUARTAS DE FINAL", "SEMI-FINAL", "FINAL", "DISPUTA 3º LUGAR"];
+
+const getCategoryHeaderStyle = (belt) => {
+  switch(belt) {
+    case 'BRANCA': return 'bg-zinc-100 text-black border-zinc-300';
+    case 'CINZA': return 'bg-zinc-400 text-black border-zinc-500';
+    case 'AMARELA': return 'bg-yellow-400 text-black border-yellow-500';
+    case 'LARANJA': return 'bg-orange-500 text-black border-orange-600';
+    case 'VERDE': return 'bg-green-600 text-white border-green-700';
+    case 'AZUL': return 'bg-blue-600 text-white border-blue-700';
+    case 'ROXA': return 'bg-purple-600 text-white border-purple-700';
+    case 'MARROM': return 'bg-amber-800 text-white border-amber-900';
+    case 'PRETA': return 'bg-zinc-900 text-white border-black';
+    case 'SUBMISSION - NOGI': return 'bg-zinc-950 text-red-500 border-red-700 border-b-4';
+    default: return 'bg-zinc-900 text-white border-zinc-800';
+  }
+};
 
 // === COMPONENTES DA INTERFACE ===
 
@@ -201,7 +217,6 @@ const LoginScreen = ({ onGuestLogin }) => {
     lower: /[a-z]/.test(password),
     number: /[0-9]/.test(password)
   };
-
   const isPasswordValid = passReqs.length && passReqs.upper && passReqs.lower && passReqs.number;
 
   const handleEmailAuth = async (e) => {
@@ -210,11 +225,9 @@ const LoginScreen = ({ onGuestLogin }) => {
     try {
       if (isRegistering) {
         if (password !== confirmPassword) { setError("As senhas não coincidem."); return; }
-        if (!isPasswordValid) { setError("A senha não cumpre todos os requisitos de segurança."); return; }
-
+        if (!isPasswordValid) { setError("A senha não cumpre todos os requisitos."); return; }
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name.toUpperCase() });
-        
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -225,7 +238,7 @@ const LoginScreen = ({ onGuestLogin }) => {
 
   const handleGoogleLogin = async () => {
     try { await signInWithPopup(auth, googleProvider); } 
-    catch (err) { setError("Erro no Google Login. Verifique domínios autorizados no Firebase."); }
+    catch (err) { setError("Erro no Google Login."); }
   };
 
   return (
@@ -243,21 +256,20 @@ const LoginScreen = ({ onGuestLogin }) => {
         <form onSubmit={handleEmailAuth} className="space-y-4">
           {isRegistering && (
             <div>
-              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição (Academia)</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value.toUpperCase())} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 uppercase" placeholder="O SEU NOME" />
+              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value.toUpperCase())} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-blue-500 uppercase" placeholder="O SEU NOME" />
             </div>
           )}
           <div>
             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">E-mail</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="seu@email.com" />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-blue-500" placeholder="seu@email.com" />
           </div>
           <div>
             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Senha</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-blue-500" placeholder="••••••••" />
             
             {isRegistering && (
               <div className="mt-3 p-3 bg-zinc-950 rounded-lg border border-zinc-800 space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Requisitos de Segurança:</p>
                 <div className={`text-xs flex items-center gap-2 ${passReqs.length ? 'text-green-500' : 'text-zinc-500'}`}>
                   {passReqs.length ? <CheckCircle size={14} /> : <div className="w-3.5 h-3.5 border border-zinc-600 rounded-full" />} Mínimo 8 caracteres
                 </div>
@@ -277,7 +289,7 @@ const LoginScreen = ({ onGuestLogin }) => {
           {isRegistering && (
             <div>
               <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Confirmar Senha</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-blue-500" placeholder="••••••••" />
             </div>
           )}
 
@@ -293,7 +305,6 @@ const LoginScreen = ({ onGuestLogin }) => {
         </div>
 
         <button onClick={handleGoogleLogin} className="w-full mt-6 bg-white hover:bg-gray-100 text-black font-black py-3 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95 uppercase tracking-widest">
-          <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
           Google
         </button>
 
@@ -301,7 +312,6 @@ const LoginScreen = ({ onGuestLogin }) => {
           <button onClick={() => setIsRegistering(!isRegistering)} className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
             {isRegistering ? 'Já tenho conta. Fazer Login' : 'Não tem conta? Registre-se'}
           </button>
-          
           <button onClick={onGuestLogin} className="text-zinc-600 hover:text-zinc-400 text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 mt-4">
             <LogIn size={14} /> Entrar no Modo Gratuito
           </button>
@@ -312,20 +322,26 @@ const LoginScreen = ({ onGuestLogin }) => {
 };
 
 // 3. Tela de Gestão do Evento (Dashboard)
-const DashboardScreen = ({ categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, triggerPrint }) => {
-  const [activeTab, setActiveTab] = useState('categories'); 
+const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl }) => {
+  const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'categories'
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [printMode, setPrintMode] = useState(null); 
 
-  // Estados de Nova Categoria
+  // Modais
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showFightModal, setShowFightModal] = useState(false);
+  
+  // Estados Formulários
+  const [editingCategory, setEditingCategory] = useState(null);
   const [newCat, setNewCat] = useState({ name: '', belt: '', gender: '' });
+  
+  const [editingFight, setEditingFight] = useState(null);
+  const [addingFightToCat, setAddingFightToCat] = useState(null);
+  const [newFight, setNewFight] = useState({ category: '', belt: '', gender: '', phase: 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
 
-  // Estados de Nova Luta
-  const [addingFightToCat, setAddingFightToCat] = useState(null); // id da categoria
-  const [newFight, setNewFight] = useState({ phase: 'FASE DE GRUPOS', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
-
-  // Estados do Perfil
+  // Perfil
   const [fullName, setFullName] = useState(localStorage.getItem(`fullName_${user?.uid}`) || '');
   const [profileName, setProfileName] = useState(user?.displayName || '');
   const [newPassword, setNewPassword] = useState('');
@@ -337,55 +353,97 @@ const DashboardScreen = ({ categories, setCategories, fightHistory, onStartFight
     setShowPaymentModal(true);
   };
 
-  const handleCreateCategory = (e) => {
-    e.preventDefault();
+  // CRUD CATEGORIAS
+  const openCategoryModal = (cat = null) => {
     if (!isPremium) return triggerPremiumModal();
-    const cat = { id: Date.now(), name: newCat.name.toUpperCase() || 'CATEGORIA GERAL', belt: newCat.belt, gender: newCat.gender, fights: [] };
-    setCategories([...categories, cat]);
-    setShowCategoryModal(false);
-    setNewCat({ name: '', belt: '', gender: '' });
-  };
-
-  const handleAddFightToCat = (e) => {
-    e.preventDefault();
-    if (!isPremium) return triggerPremiumModal();
-    
-    setCategories(prevCats => prevCats.map(c => {
-      if (c.id === addingFightToCat) {
-        return { ...c, fights: [...c.fights, { ...newFight, id: Date.now(), status: 'pending' }] };
-      }
-      return c;
-    }));
-    
-    setAddingFightToCat(null);
-    setNewFight({ phase: 'FASE DE GRUPOS', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
-  };
-
-  const removeFight = (catId, fightId) => {
-    if(window.confirm("Tem certeza que deseja remover esta luta da fila?")) {
-      setCategories(prevCats => prevCats.map(c => {
-        if (c.id === catId) {
-          return { ...c, fights: c.fights.filter(f => f.id !== fightId) };
-        }
-        return c;
-      }));
+    if (cat) {
+      setEditingCategory(cat);
+      setNewCat({ name: cat.name, belt: cat.belt || '', gender: cat.gender || '' });
+    } else {
+      setEditingCategory(null);
+      setNewCat({ name: '', belt: '', gender: '' });
     }
+    setShowCategoryModal(true);
+  };
+
+  const handleSaveCategory = (e) => {
+    e.preventDefault();
+    const catData = { ...newCat, name: newCat.name.toUpperCase() || 'CATEGORIA GERAL' };
+    
+    if (editingCategory) {
+      setCategories(categories.map(c => c.id === editingCategory.id ? { ...c, ...catData } : c));
+    } else {
+      setCategories([...categories, { ...catData, id: Date.now(), fights: [] }]);
+    }
+    setShowCategoryModal(false);
   };
 
   const removeCategory = (catId) => {
     if(window.confirm("Tem certeza que deseja remover esta categoria inteira e todas as suas lutas?")) {
       setCategories(categories.filter(c => c.id !== catId));
     }
-  }
+  };
 
-  const handleStartFightInternal = (fight, category) => {
-    onStartFight({
-      ...fight,
-      catId: category.id,
-      category: category.name,
-      belt: category.belt,
-      gender: category.gender
-    });
+  // CRUD LUTAS (Fila Geral ou Categoria)
+  const openFightModal = (mode, data = null, catId = null) => {
+    if (!isPremium) return triggerPremiumModal();
+    setAddingFightToCat(catId); // se null, é fila geral
+    
+    if (mode === 'edit' && data) {
+      setEditingFight(data);
+      setNewFight({
+        category: data.category || '', belt: data.belt || '', gender: data.gender || '', phase: data.phase || 'LUTA LIVRE',
+        f1Name: data.f1Name || '', f1Team: data.f1Team || '', f2Name: data.f2Name || '', f2Team: data.f2Team || ''
+      });
+    } else {
+      setEditingFight(null);
+      setNewFight({ category: '', belt: '', gender: '', phase: catId ? 'FASE DE GRUPOS' : 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
+    }
+    setShowFightModal(true);
+  };
+
+  const handleSaveFight = (e) => {
+    e.preventDefault();
+    const fightData = { 
+      ...newFight, 
+      f1Name: newFight.f1Name.toUpperCase(), f1Team: newFight.f1Team.toUpperCase(),
+      f2Name: newFight.f2Name.toUpperCase(), f2Team: newFight.f2Team.toUpperCase()
+    };
+
+    if (editingFight) {
+      // Update existing fight
+      if (addingFightToCat) {
+        setCategories(categories.map(c => c.id === addingFightToCat ? { ...c, fights: c.fights.map(f => f.id === editingFight.id ? { ...f, ...fightData } : f) } : c));
+      } else {
+        setQueue(queue.map(f => f.id === editingFight.id ? { ...f, ...fightData } : f));
+      }
+    } else {
+      // Add new fight
+      const newF = { ...fightData, id: Date.now(), status: 'pending' };
+      if (addingFightToCat) {
+        setCategories(categories.map(c => c.id === addingFightToCat ? { ...c, fights: [...c.fights, newF] } : c));
+      } else {
+        if (queue.length >= 15) return alert("Limite atingido na fila livre.");
+        setQueue([...queue, newF]);
+      }
+    }
+    setShowFightModal(false);
+  };
+
+  const removeFight = (id, catId = null) => {
+    if(window.confirm("Tem certeza que deseja remover esta luta?")) {
+      if (catId) {
+        setCategories(categories.map(c => c.id === catId ? { ...c, fights: c.fights.filter(f => f.id !== id) } : c));
+      } else {
+        setQueue(queue.filter(f => f.id !== id));
+      }
+    }
+  };
+
+  const triggerPrintLocal = (mode, fight = null) => {
+    if (!isPremium) return triggerPremiumModal();
+    setPrintMode({ type: mode, data: fight });
+    setTimeout(() => { window.print(); setPrintMode(null); }, 100);
   };
 
   const handleLogoUpload = (e) => {
@@ -400,9 +458,7 @@ const DashboardScreen = ({ categories, setCategories, fightHistory, onStartFight
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    if (!isPremium) return triggerPremiumModal();
     setProfileMessage({ text: '', type: '' });
-
     try {
       localStorage.setItem(`fullName_${user?.uid}`, fullName);
       if (profileName !== user.displayName) await updateProfile(auth.currentUser, { displayName: profileName.toUpperCase() });
@@ -413,11 +469,11 @@ const DashboardScreen = ({ categories, setCategories, fightHistory, onStartFight
         if (!strongRegex.test(newPassword)) { setProfileMessage({ text: 'Senha fraca.', type: 'error' }); return; }
         await updatePassword(auth.currentUser, newPassword);
       }
-
       setProfileMessage({ text: 'Perfil atualizado com sucesso!', type: 'success' });
       setNewPassword(''); setConfirmNewPassword('');
+      setTimeout(() => setShowProfileModal(false), 2000);
     } catch (error) {
-      setProfileMessage({ text: 'Erro ao atualizar perfil. Tente fazer login novamente.', type: 'error' });
+      setProfileMessage({ text: 'Erro ao atualizar perfil. Faça logout e entre novamente.', type: 'error' });
     }
   };
 
@@ -447,355 +503,438 @@ const DashboardScreen = ({ categories, setCategories, fightHistory, onStartFight
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white font-sans relative">
+    <div className={`min-h-screen bg-zinc-950 text-white font-sans relative ${printMode ? 'print:bg-white print:text-black' : ''}`}>
       
-      {/* Modais Premium e de Formulários */}
-      {showPaymentModal && !isPremium && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative">
-            <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
-            <div className="text-center mb-10">
-              <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Desbloquear Premium</h2>
-              <p className="text-zinc-400 mt-2">Ative um plano para libertar Categorias, Chaves, Histórico, Impressão PDF e Logo Customizada.</p>
+      {/* SECÇÃO IMPRESSÃO */}
+      {printMode && (
+        <div className="hidden print:flex flex-col p-4 w-full min-h-screen">
+          {printMode.type === 'single' && (
+            <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
+              <PrintBoletim data={{...printMode.data, ...printMode.data.result}} logoUrl={logoUrl} user={user} />
             </div>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-zinc-950 border-2 border-zinc-800 hover:border-blue-500 transition-all rounded-2xl p-6 relative flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-2xl font-black uppercase text-blue-400">Passe Torneio</h3>
-                    <p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 3 Dias</p>
-                  </div>
-                  <Zap size={32} className="text-blue-500" />
+          )}
+          {printMode.type === 'all' && (
+            <div className="w-full">
+              <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+                <img src={logoUrl} alt="Logo" className="h-16 w-auto object-contain" />
+                <div className="text-right">
+                  <h1 className="text-2xl font-black tracking-tighter mb-0">RELATÓRIO GERAL</h1>
+                  <p className="text-sm font-bold text-zinc-600 uppercase">{user?.displayName || 'SISTEMA OFICIAL'}</p>
                 </div>
-                <div className="text-5xl font-black mb-6">R$ 15<span className="text-xl text-zinc-500">,00</span></div>
-                <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Ideal para Campeonatos de Fim de Semana</li>
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Todas as funções desbloqueadas</li>
-                </ul>
-                <button onClick={() => handlePayment("Plano Campeonato (3 Dias)", 15)} disabled={isProcessingPayment} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
-                  {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX ou Cartão</>}
-                </button>
               </div>
-              <div className="bg-zinc-950 border-2 border-yellow-500 rounded-2xl p-6 relative flex flex-col shadow-[0_0_30px_rgba(234,179,8,0.15)]">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">Mais Popular</div>
-                <div className="flex justify-between items-start mb-4 mt-2">
-                  <div>
-                    <h3 className="text-2xl font-black uppercase text-yellow-500">Plano Mensal</h3>
-                    <p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 30 Dias</p>
-                  </div>
-                  <Calendar size={32} className="text-yellow-500" />
-                </div>
-                <div className="text-5xl font-black mb-6">R$ 30<span className="text-xl text-zinc-500">,00</span></div>
-                <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Perfeito para Academias e Treinos Diários</li>
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Histórico ilimitado guardado no sistema</li>
-                </ul>
-                <button onClick={() => handlePayment("Plano Mensal (30 Dias)", 30)} disabled={isProcessingPayment} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black py-4 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
-                  {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX ou Cartão</>}
-                </button>
-              </div>
+              <table className="w-full text-sm text-left border-collapse border border-zinc-300">
+                <thead>
+                  <tr className="bg-zinc-100">
+                    <th className="border border-zinc-300 p-2 font-black uppercase">Hora</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase">Categoria / Faixa / Sexo</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase text-right">Lutador 1</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase text-center">Placar</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase">Lutador 2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fightHistory.map(record => (
+                    <tr key={record.id}>
+                      <td className="border border-zinc-300 p-2 font-mono text-xs">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                      <td className="border border-zinc-300 p-2 font-bold text-xs uppercase">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || '-'}</td>
+                      <td className="border border-zinc-300 p-2 text-right">
+                        <div className="font-bold uppercase text-xs">{record.f1.name}</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">V:{record.f1.advantages} P:{record.f1.penalties}</div>
+                      </td>
+                      <td className="border border-zinc-300 p-2 text-center font-black text-lg bg-zinc-50">{record.f1.points} x {record.f2.points}</td>
+                      <td className="border border-zinc-300 p-2 text-left">
+                        <div className="font-bold uppercase text-xs">{record.f2.name}</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">V:{record.f2.advantages} P:{record.f2.penalties}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="text-center mt-6 text-xs text-zinc-500 font-bold uppercase tracking-widest flex items-center justify-center gap-2"><Lock size={12} /> Pagamento Seguro Processado pelo Mercado Pago</div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Modal de Nova Categoria */}
-      {showCategoryModal && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative">
-            <button onClick={() => setShowCategoryModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><FolderPlus size={24}/> Nova Categoria</h2>
-            <form onSubmit={handleCreateCategory} className="space-y-4">
-              <div>
-                <input value={newCat.name} onChange={e => setNewCat({...newCat, name: e.target.value.toUpperCase()})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm" placeholder="NOME DA CATEGORIA (EX: ADULTO LEVE)" required />
-              </div>
-              <div>
-                <select value={newCat.belt} onChange={e => setNewCat({...newCat, belt: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-zinc-400 cursor-pointer">
-                  <option value="">FAIXA (OPCIONAL)</option>
-                  {BELTS.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
-              <div>
-                <select value={newCat.gender} onChange={e => setNewCat({...newCat, gender: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-zinc-400 cursor-pointer">
-                  <option value="">SEXO (OPCIONAL)</option>
-                  <option value="MASCULINO">MASCULINO</option>
-                  <option value="FEMININO">FEMININO</option>
-                </select>
-              </div>
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl uppercase tracking-widest mt-4">Salvar Categoria</button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Nova Luta em Categoria */}
-      {addingFightToCat !== null && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="max-w-lg w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative">
-            <button onClick={() => setAddingFightToCat(null)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
-            <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><GitMerge size={24}/> Adicionar Luta à Chave</h2>
-            <form onSubmit={handleAddFightToCat} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Fase da Luta</label>
-                <select value={newFight.phase} onChange={e => setNewFight({...newFight, phase: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-blue-400 font-bold cursor-pointer">
-                  {PHASES.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-
-              <div className="p-4 bg-zinc-950 rounded-2xl border-l-4 border-green-600 space-y-2">
-                <span className="text-xs font-black text-green-600 uppercase tracking-widest">Lutador 1 (Verde)</span>
-                <input required value={newFight.f1Name} onChange={e => setNewFight({...newFight, f1Name: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="NOME DO ATLETA" />
-                <input required value={newFight.f1Team} onChange={e => setNewFight({...newFight, f1Team: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="EQUIPE" />
-              </div>
-
-              <div className="p-4 bg-zinc-950 rounded-2xl border-l-4 border-zinc-600 space-y-2">
-                <span className="text-xs font-black text-zinc-500 uppercase tracking-widest">Lutador 2 (Branco)</span>
-                <input required value={newFight.f2Name} onChange={e => setNewFight({...newFight, f2Name: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="NOME DO ATLETA" />
-                <input required value={newFight.f2Team} onChange={e => setNewFight({...newFight, f2Team: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="EQUIPE" />
-              </div>
-
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl uppercase tracking-widest mt-4">Salvar na Chave</button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* HEADER DO DASHBOARD */}
-      <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-zinc-800 pb-6 pt-4 md:pt-8">
-        <div className="flex items-center gap-4">
-          <label onClick={(e) => { if(!isPremium) triggerPremiumModal(e); }} className="relative group cursor-pointer block">
-            <img src={logoUrl} alt="Logo" className="h-16 w-auto drop-shadow-lg object-contain bg-white/10 rounded" />
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded transition-opacity"><ImagePlus className="text-white" size={24} /></div>
-            <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={!isPremium} />
-            {!isPremium && <div className="absolute -bottom-2 -right-2 bg-yellow-500 text-black p-1 rounded-full"><Lock size={10} /></div>}
-          </label>
-          <div>
-            <h1 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-2">Painel de Evento {isPremium ? <Crown size={20} className="text-yellow-500" /> : <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded-full">GRATUITO</span>}</h1>
-            <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">{user?.displayName || user?.email || 'Convidado'}</p>
-          </div>
-        </div>
-        <button onClick={onLogout} className="text-zinc-500 hover:text-red-500 font-bold text-sm uppercase tracking-widest transition-colors flex items-center gap-2"><LogOut size={16} /> <span className="hidden md:inline">Sair</span></button>
-      </header>
-
-      {/* MAIN CONTENT DO DASHBOARD */}
-      <main className="max-w-6xl mx-auto pb-20">
+      {/* MODAIS APLICAÇÃO */}
+      <div className="print:hidden">
         
-        {/* TABS */}
-        <nav className="flex gap-6 mb-8 border-b border-zinc-800">
-          <button onClick={() => setActiveTab('categories')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'categories' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Categorias e Chaves</button>
-          <button onClick={() => setActiveTab('account')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'account' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>A Minha Conta</button>
-        </nav>
-
-        {/* TAB: A MINHA CONTA */}
-        {activeTab === 'account' && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl relative overflow-hidden">
-              <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-zinc-300"><User size={24}/> Detalhes do Perfil</h2>
+        {/* Modal Perfil (Minha Conta) */}
+        {showProfileModal && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative shadow-2xl">
+              <button onClick={() => setShowProfileModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><User size={32} className="text-white" /></div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">O Meu Perfil</h2>
+                <p className="text-zinc-400 text-sm mt-1">{user?.email}</p>
+              </div>
               {user?.email === 'Conta Gratuita' ? (
-                <p className="text-zinc-500 text-sm">Está num modo de visitante temporário. Crie uma conta real para gerenciar o perfil.</p>
+                <p className="text-center text-zinc-500 text-sm">Modo de visitante temporário.</p>
               ) : (
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
-                  {profileMessage.text && <div className={`p-3 rounded-lg text-sm mb-4 text-center font-bold ${profileMessage.type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-500' : 'bg-green-900/50 text-green-200 border border-green-500'}`}>{profileMessage.text}</div>}
+                  {profileMessage.text && <div className={`p-3 rounded-lg text-sm text-center font-bold ${profileMessage.type === 'error' ? 'bg-red-900/50 text-red-200' : 'bg-green-900/50 text-green-200'}`}>{profileMessage.text}</div>}
                   <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome Completo</label>
-                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase" placeholder="SEU NOME COMPLETO" />
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome Completo</label>
+                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição <span className="text-blue-500 lowercase normal-case font-normal">(Exibido na impressão)</span></label>
-                    <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase" placeholder="EX: TANQUE TEAM MATRIZ" />
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição (Placar / Impressão)</label>
+                    <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-sm" />
                   </div>
-                  <div className="pt-4 border-t border-zinc-800 mt-4">
-                    <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4">Alterar Senha de Acesso</h3>
-                    <div className="space-y-4">
-                      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Nova Senha Forte" />
-                      <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Confirmar Nova Senha" />
-                    </div>
+                  <div className="pt-4 border-t border-zinc-800 mt-2">
+                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Alterar Senha</h3>
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm mb-3" placeholder="Nova Senha Forte" />
+                    <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Confirmar Nova Senha" />
                   </div>
-                  <button type="submit" className={`w-full font-black py-4 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-6 flex justify-center items-center gap-2 ${isPremium ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'}`}>
-                    {!isPremium && <Lock size={16}/>} Salvar Alterações
-                  </button>
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-4">Salvar</button>
                 </form>
               )}
-            </div>
-
-            <div>
-               {isPremium ? (
-                  <div className="bg-zinc-900 border border-yellow-500/30 p-8 rounded-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black px-4 py-1 rounded-bl-xl uppercase tracking-widest">Ativo</div>
-                    <Crown size={48} className="text-yellow-500 mb-4" />
-                    <h2 className="text-3xl font-black text-white uppercase mb-2 tracking-tighter">Plano Premium</h2>
-                    <p className="text-zinc-400 mb-6 font-medium">Todas as funcionalidades profissionais estão desbloqueadas para a sua conta.</p>
-                    <ul className="space-y-3 text-sm text-zinc-300 font-bold mb-8">
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Criar Categorias e Chaves</li>
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Histórico de Lutas Salvo</li>
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Logo Personalizada no Placar</li>
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Impressão de Boletim (PDF)</li>
-                    </ul>
-                  </div>
-               ) : (
-                 <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl">
-                    <h2 className="text-2xl font-black text-white uppercase mb-6 tracking-tighter text-center border-b border-zinc-800 pb-4">Faça Upgrade para Premium</h2>
-                    <div className="space-y-6">
-                      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
-                        <div className="flex justify-between items-start mb-2">
-                          <div><h3 className="text-lg font-black uppercase text-blue-400">Passe Torneio</h3><p className="text-zinc-500 font-bold text-[10px] uppercase">Acesso por 3 Dias</p></div>
-                          <div className="text-2xl font-black">R$ 15</div>
-                        </div>
-                        <button onClick={() => handlePayment("Plano Campeonato", 15)} disabled={isProcessingPayment} className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-black py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-sm mt-4 uppercase tracking-widest">
-                          {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={18} /> Pagar com PIX/Cartão</>}
-                        </button>
-                      </div>
-                      <div className="bg-zinc-950 border border-yellow-500/50 rounded-2xl p-6 relative">
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-[9px] font-black px-3 py-0.5 rounded-full uppercase tracking-widest">Mais Popular</div>
-                        <div className="flex justify-between items-start mb-2">
-                          <div><h3 className="text-lg font-black uppercase text-yellow-500">Plano Mensal</h3><p className="text-zinc-500 font-bold text-[10px] uppercase">Acesso por 30 Dias</p></div>
-                          <div className="text-2xl font-black">R$ 30</div>
-                        </div>
-                        <button onClick={() => handlePayment("Plano Mensal", 30)} disabled={isProcessingPayment} className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-700 text-black font-black py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-sm mt-4 uppercase tracking-widest">
-                          {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={18} /> Pagar com PIX/Cartão</>}
-                        </button>
-                      </div>
-                    </div>
-                 </div>
-               )}
             </div>
           </div>
         )}
 
-        {/* TAB: CATEGORIAS E CHAVES */}
-        {activeTab === 'categories' && (
-          <div className="space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
-              <div>
-                <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-100"><Folder size={24} className="text-blue-500"/> Gestão de Lutas por Categoria</h2>
-                <p className="text-sm text-zinc-500 mt-1">Crie as categorias uma vez e organize as chaves do seu evento.</p>
+        {/* Modal Pagamento */}
+        {showPaymentModal && !isPremium && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative">
+              <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
+              <div className="text-center mb-10">
+                <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
+                <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Desbloquear Premium</h2>
+                <p className="text-zinc-400 mt-2">Ative um plano para libertar a Fila de Lutas, Histórico, Impressão PDF e Logo Customizada.</p>
               </div>
-              <div className="flex gap-3 w-full md:w-auto">
-                <button onClick={() => onStartFight(null)} className="flex-1 md:w-auto text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-700 px-4 py-3 rounded-xl">Placar Livre</button>
-                <button onClick={(e) => { if(isPremium) setShowCategoryModal(true); else triggerPremiumModal(e); }} className="flex-1 md:w-auto bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
-                  {!isPremium && <Lock size={14}/>} <Plus size={16}/> Nova Categoria
-                </button>
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="bg-zinc-950 border-2 border-zinc-800 hover:border-blue-500 transition-all rounded-2xl p-6 relative flex flex-col">
+                  <div className="flex justify-between items-start mb-4">
+                    <div><h3 className="text-2xl font-black uppercase text-blue-400">Passe Torneio</h3><p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 3 Dias</p></div>
+                    <Zap size={32} className="text-blue-500" />
+                  </div>
+                  <div className="text-5xl font-black mb-6">R$ 15<span className="text-xl text-zinc-500">,00</span></div>
+                  <button onClick={() => handlePayment("Plano Campeonato", 15)} disabled={isProcessingPayment} className="w-full mt-auto bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
+                    {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
+                  </button>
+                </div>
+                <div className="bg-zinc-950 border-2 border-yellow-500 rounded-2xl p-6 relative flex flex-col shadow-[0_0_30px_rgba(234,179,8,0.15)]">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">Mais Popular</div>
+                  <div className="flex justify-between items-start mb-4 mt-2">
+                    <div><h3 className="text-2xl font-black uppercase text-yellow-500">Plano Mensal</h3><p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 30 Dias</p></div>
+                    <Calendar size={32} className="text-yellow-500" />
+                  </div>
+                  <div className="text-5xl font-black mb-6">R$ 30<span className="text-xl text-zinc-500">,00</span></div>
+                  <button onClick={() => handlePayment("Plano Mensal", 30)} disabled={isProcessingPayment} className="w-full mt-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
+                    {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        )}
 
-            {categories.length === 0 ? (
-              <div className="border-2 border-dashed border-zinc-800 rounded-3xl p-16 text-center text-zinc-500 font-medium">
-                <FolderPlus size={48} className="mx-auto mb-4 text-zinc-700" />
-                Nenhuma categoria criada. Comece por organizar a sua primeira chave.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6">
-                {categories.map(cat => (
-                  <div key={cat.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-xl">
-                    {/* Header da Categoria */}
-                    <div className="bg-zinc-950 p-6 border-b border-zinc-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                      <div>
-                        <h3 className="text-2xl font-black uppercase text-white tracking-tighter leading-none mb-2">{cat.name}</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {cat.belt && <span className="bg-blue-900/30 text-blue-400 border border-blue-900/50 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">{cat.belt}</span>}
-                          {cat.gender && <span className="bg-zinc-800 text-zinc-400 border border-zinc-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">{cat.gender}</span>}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 w-full md:w-auto">
-                        <button onClick={() => removeCategory(cat.id)} className="p-3 bg-zinc-900 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors border border-zinc-800"><Trash2 size={16}/></button>
-                        <button onClick={() => setAddingFightToCat(cat.id)} className="flex-1 md:w-auto bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
-                          <Plus size={14}/> Adicionar Luta
-                        </button>
-                      </div>
+        {/* Modal CRUD Categoria */}
+        {showCategoryModal && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative">
+              <button onClick={() => setShowCategoryModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><FolderPlus size={24}/> {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}</h2>
+              <form onSubmit={handleSaveCategory} className="space-y-4">
+                <div>
+                  <input value={newCat.name} onChange={e => setNewCat({...newCat, name: e.target.value.toUpperCase()})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm" placeholder="NOME DA CATEGORIA (EX: ADULTO LEVE)" required />
+                </div>
+                <div>
+                  <select value={newCat.belt} onChange={e => setNewCat({...newCat, belt: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-zinc-400 cursor-pointer">
+                    <option value="">FAIXA (OPCIONAL)</option>
+                    {BELTS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <select value={newCat.gender} onChange={e => setNewCat({...newCat, gender: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-zinc-400 cursor-pointer">
+                    <option value="">SEXO (OPCIONAL)</option>
+                    <option value="MASCULINO">MASCULINO</option>
+                    <option value="FEMININO">FEMININO</option>
+                  </select>
+                </div>
+                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl uppercase tracking-widest mt-4">Salvar Categoria</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal CRUD Luta */}
+        {showFightModal && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="max-w-lg w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative overflow-y-auto max-h-screen">
+              <button onClick={() => setShowFightModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><GitMerge size={24}/> {editingFight ? 'Editar Luta' : 'Adicionar Luta'}</h2>
+              <form onSubmit={handleSaveFight} className="space-y-4">
+                
+                {/* Se for Fila Geral (addingFightToCat === null), mostra campos da categoria avulsa */}
+                {addingFightToCat === null ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <input value={newFight.category} onChange={e => setNewFight({...newFight, category: e.target.value.toUpperCase()})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs" placeholder="CATEGORIA / PESO (OPCIONAL)" />
                     </div>
-
-                    {/* Lista de Lutas da Categoria */}
-                    <div className="p-6">
-                      {cat.fights.length === 0 ? (
-                        <div className="text-center text-zinc-600 text-sm font-bold uppercase tracking-widest py-8">Chave Vazia</div>
-                      ) : (
-                        <div className="space-y-3">
-                          {cat.fights.map((fight, index) => (
-                            <div key={fight.id} className={`border rounded-2xl p-3 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 bg-zinc-950'}`}>
-                              <div className="hidden md:flex flex-col items-center justify-center px-4 border-r border-zinc-800/50 shrink-0">
-                                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">{fight.phase}</span>
-                                <span className="text-zinc-400 font-black text-xl">#{index + 1}</span>
-                              </div>
-                              
-                              <div className="flex-1 w-full grid grid-cols-3 items-center gap-2">
-                                <div className="text-right pr-4 border-r border-zinc-800/50">
-                                  <p className="font-black text-sm text-white uppercase truncate">{fight.f1Name}</p>
-                                  <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
-                                </div>
-                                <div className="text-center flex justify-center">
-                                   {fight.status === 'finished' ? (
-                                      <div className="font-black text-lg text-green-500 bg-green-500/10 px-3 py-1 rounded-lg border border-green-500/20">{fight.result.f1.points} x {fight.result.f2.points}</div>
-                                   ) : (
-                                      <span className="font-black text-zinc-600 italic text-xs">VS</span>
-                                   )}
-                                </div>
-                                <div className="text-left pl-4 border-l border-zinc-800/50">
-                                  <p className="font-black text-sm text-white uppercase truncate">{fight.f2Name}</p>
-                                  <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
-                                <button onClick={() => removeFight(cat.id, fight.id)} className="p-3 bg-zinc-900 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
-                                {fight.status === 'finished' && (
-                                  <button onClick={() => triggerPrint('single', { ...fight, category: cat.name, belt: cat.belt, gender: cat.gender })} className="p-3 bg-zinc-900 hover:bg-blue-900/40 text-blue-500 rounded-xl transition-colors"><Printer size={16} /></button>
-                                )}
-                                <button onClick={() => handleStartFightInternal(fight, cat)} className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
-                                  {fight.status === 'finished' ? 'Reabrir' : <><Play size={14} fill="currentColor" /> Iniciar</>}
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <select value={newFight.belt} onChange={e => setNewFight({...newFight, belt: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs text-zinc-400">
+                      <option value="">FAIXA...</option>
+                      {BELTS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                    <select value={newFight.gender} onChange={e => setNewFight({...newFight, gender: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs text-zinc-400">
+                      <option value="">SEXO...</option><option value="MASCULINO">MASCULINO</option><option value="FEMININO">FEMININO</option>
+                    </select>
                   </div>
-                ))}
-              </div>
-            )}
+                ) : (
+                  <div>
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Fase da Luta</label>
+                    <select value={newFight.phase} onChange={e => setNewFight({...newFight, phase: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-blue-400 font-bold cursor-pointer">
+                      {PHASES.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                )}
 
-            {/* Secção Histórico Geral */}
-            <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-300">
-                  <History size={20}/> Histórico Completo do Evento
-                  {!isPremium && <Lock size={16} className="text-yellow-500 ml-2" />}
-                </h2>
-                {fightHistory.length > 0 && isPremium && (
-                  <button onClick={() => triggerPrint('all')} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-800 px-4 py-2 rounded-xl flex items-center gap-2">
-                    <Printer size={14} /> Relatório Geral
+                <div className="p-4 bg-zinc-950 rounded-2xl border-l-4 border-green-600 space-y-2 mt-4">
+                  <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Lutador 1 (Verde)</span>
+                  <input required value={newFight.f1Name} onChange={e => setNewFight({...newFight, f1Name: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="NOME DO ATLETA" />
+                  <input required value={newFight.f1Team} onChange={e => setNewFight({...newFight, f1Team: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="EQUIPE" />
+                </div>
+
+                <div className="p-4 bg-zinc-950 rounded-2xl border-l-4 border-zinc-600 space-y-2">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Lutador 2 (Branco)</span>
+                  <input required value={newFight.f2Name} onChange={e => setNewFight({...newFight, f2Name: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="NOME DO ATLETA" />
+                  <input required value={newFight.f2Team} onChange={e => setNewFight({...newFight, f2Team: e.target.value.toUpperCase()})} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm outline-none uppercase" placeholder="EQUIPE" />
+                </div>
+
+                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl uppercase tracking-widest mt-4 shadow-lg active:scale-95">Salvar Luta</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* HEADER GERAL */}
+        <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-zinc-800 pb-6 pt-4 md:pt-8">
+          <div className="flex items-center gap-4">
+            <label onClick={(e) => { if(!isPremium) triggerPremiumModal(e); }} className="relative group cursor-pointer block">
+              <img src={logoUrl} alt="Logo" className="h-16 w-auto drop-shadow-lg object-contain bg-white/10 rounded" />
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded transition-opacity"><ImagePlus className="text-white" size={24} /></div>
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={!isPremium} />
+              {!isPremium && <div className="absolute -bottom-2 -right-2 bg-yellow-500 text-black p-1 rounded-full"><Lock size={10} /></div>}
+            </label>
+            <div>
+              <h1 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-2">Painel de Evento {isPremium ? <Crown size={20} className="text-yellow-500" /> : <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded-full">GRATUITO</span>}</h1>
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">{user?.email}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <button onClick={() => setShowProfileModal(true)} className="text-zinc-400 hover:text-white font-bold text-xs uppercase transition-colors flex items-center gap-2">
+              <User size={16} /> <span className="hidden md:inline">A Minha Conta</span>
+            </button>
+            <button onClick={onLogout} className="text-zinc-500 hover:text-red-500 font-bold text-xs uppercase transition-colors flex items-center gap-2 border-l border-zinc-800 pl-6">
+              <LogOut size={16} /> <span className="hidden md:inline">Sair</span>
+            </button>
+          </div>
+        </header>
+
+        {/* MAIN CONTENT DO DASHBOARD */}
+        <main className="max-w-6xl mx-auto pb-20">
+          
+          <nav className="flex gap-6 mb-8 border-b border-zinc-800">
+            <button onClick={() => setActiveTab('queue')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'queue' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Fila de Lutas Geral</button>
+            <button onClick={() => setActiveTab('categories')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'categories' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Categorias e Chaves</button>
+          </nav>
+
+          {/* TAB: FILA DE LUTAS GERAL */}
+          {activeTab === 'queue' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-3 flex justify-between items-center bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-100"><ListOrdered size={24} className="text-blue-500"/> Fila Livre (Lutas Individuais)</h2>
+                  <p className="text-sm text-zinc-500 mt-1">Adicione lutas rápidas fora de uma chave estruturada.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => onStartFight(null)} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-700 px-4 py-3 rounded-xl">Placar Avulso</button>
+                  <button onClick={() => openFightModal('add')} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg transition-all">
+                    <Plus size={16}/> Adicionar Luta
                   </button>
+                </div>
+              </div>
+
+              <div className="lg:col-span-3">
+                {queue.length === 0 ? (
+                  <div className="border-2 border-dashed border-zinc-800 rounded-3xl p-16 text-center text-zinc-500 font-medium">Nenhuma luta na fila geral.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {queue.map((fight, index) => (
+                      <div key={fight.id} className={`bg-zinc-900 border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 hover:border-zinc-700 shadow-lg'}`}>
+                        <div className={`text-zinc-600 font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl shrink-0 ${fight.status === 'finished' ? 'bg-green-900/20 text-green-500' : 'bg-zinc-950'}`}>
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 w-full text-center md:text-left grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
+                          <div className="md:col-span-3 pb-2 border-b border-zinc-800/50 mb-1">
+                            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
+                              {[fight.category, fight.belt, fight.gender].filter(Boolean).join(' • ') || 'SEM CATEGORIA'}
+                            </span>
+                          </div>
+                          <div className="text-right pr-4 border-r border-zinc-800/50">
+                            <p className="font-black text-sm text-white uppercase truncate">{fight.f1Name}</p>
+                            <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
+                          </div>
+                          <div className="text-center flex justify-center">
+                             {fight.status === 'finished' ? (
+                                <div className="font-black text-lg text-green-500 bg-green-500/10 px-3 py-1 rounded-lg border border-green-500/20">{fight.result.f1.points} x {fight.result.f2.points}</div>
+                             ) : <span className="font-black text-zinc-600 italic text-xs">VS</span>}
+                          </div>
+                          <div className="text-left pl-4 border-l border-zinc-800/50">
+                            <p className="font-black text-sm text-white uppercase truncate">{fight.f2Name}</p>
+                            <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+                          <button onClick={() => openFightModal('edit', fight)} className="p-3 bg-zinc-950 hover:bg-zinc-800 text-zinc-400 rounded-xl transition-colors"><Edit2 size={16} /></button>
+                          <button onClick={() => removeFight(fight.id)} className="p-3 bg-zinc-950 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
+                          {fight.status === 'finished' && (
+                            <button onClick={() => triggerPrintLocal('single', fight)} className="p-3 bg-zinc-950 hover:bg-blue-900/40 text-blue-500 rounded-xl transition-colors"><Printer size={16} /></button>
+                          )}
+                          <button onClick={() => onStartFight(fight)} className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
+                            {fight.status === 'finished' ? 'Reabrir' : <><Play size={14} fill="currentColor" /> Iniciar</>}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              
-              {fightHistory.length === 0 ? (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
-                  {!isPremium ? "O histórico requer plano Premium." : "Nenhum resultado processado ainda."}
+            </div>
+          )}
+
+          {/* TAB: CATEGORIAS E CHAVES */}
+          {activeTab === 'categories' && (
+            <div className="space-y-8">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-100"><Folder size={24} className="text-blue-500"/> Gestão de Categorias e Chaves</h2>
+                  <p className="text-sm text-zinc-500 mt-1">Crie as categorias uma vez e organize as chaves (quartas, semi, final).</p>
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <button onClick={() => openCategoryModal()} className="flex-1 md:w-auto bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
+                    <Plus size={16}/> Nova Categoria
+                  </button>
+                </div>
+              </div>
+
+              {categories.length === 0 ? (
+                <div className="border-2 border-dashed border-zinc-800 rounded-3xl p-16 text-center text-zinc-500 font-medium">
+                  <FolderPlus size={48} className="mx-auto mb-4 text-zinc-700" />
+                  Nenhuma categoria criada. Comece por organizar a sua primeira chave.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {fightHistory.map(record => (
-                    <div key={record.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 opacity-80 hover:opacity-100 transition-opacity">
-                      <div className="text-[10px] text-zinc-500 font-black tracking-widest uppercase mb-2 border-b border-zinc-800 pb-2 flex justify-between">
-                        <span className="truncate pr-2">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || 'LIVRE'}</span>
-                        <span className="shrink-0">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                <div className="grid grid-cols-1 gap-6">
+                  {categories.map(cat => (
+                    <div key={cat.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-xl">
+                      {/* Header da Categoria Customizado por Cor da Faixa */}
+                      <div className={`p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${getCategoryHeaderStyle(cat.belt)}`}>
+                        <div>
+                          <h3 className="text-2xl font-black uppercase tracking-tighter leading-none mb-2">{cat.name}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {cat.belt && <span className="bg-black/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">{cat.belt}</span>}
+                            {cat.gender && <span className="bg-black/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">{cat.gender}</span>}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 w-full md:w-auto">
+                          <button onClick={() => openCategoryModal(cat)} className="p-3 bg-black/20 hover:bg-black/40 rounded-xl transition-colors"><Edit2 size={16}/></button>
+                          <button onClick={() => removeCategory(cat.id)} className="p-3 bg-black/20 hover:bg-black/40 text-red-400 rounded-xl transition-colors"><Trash2 size={16}/></button>
+                          <button onClick={() => openFightModal('add', null, cat.id)} className="flex-1 md:w-auto bg-black/20 hover:bg-black/40 text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                            <Plus size={14}/> Luta na Chave
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-bold text-green-500 text-xs truncate w-24 uppercase">{record.f1.name}</span>
-                        <span className="font-black text-lg shrink-0">{record.f1.points} x {record.f2.points}</span>
-                        <span className="font-bold text-zinc-400 text-xs truncate w-24 text-right uppercase">{record.f2.name}</span>
+
+                      {/* Lista de Lutas da Categoria */}
+                      <div className="p-6">
+                        {cat.fights.length === 0 ? (
+                          <div className="text-center text-zinc-600 text-sm font-bold uppercase tracking-widest py-8">Chave Vazia</div>
+                        ) : (
+                          <div className="space-y-3">
+                            {cat.fights.map((fight, index) => (
+                              <div key={fight.id} className={`border rounded-2xl p-3 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'}`}>
+                                <div className="hidden md:flex flex-col items-center justify-center px-4 border-r border-zinc-800/50 shrink-0">
+                                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">{fight.phase}</span>
+                                  <span className="text-zinc-400 font-black text-xl">#{index + 1}</span>
+                                </div>
+                                
+                                <div className="flex-1 w-full grid grid-cols-3 items-center gap-2">
+                                  <div className="text-right pr-4 border-r border-zinc-800/50">
+                                    <p className="font-black text-sm text-white uppercase truncate">{fight.f1Name}</p>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
+                                  </div>
+                                  <div className="text-center flex justify-center">
+                                     {fight.status === 'finished' ? (
+                                        <div className="font-black text-lg text-green-500 bg-green-500/10 px-3 py-1 rounded-lg border border-green-500/20">{fight.result.f1.points} x {fight.result.f2.points}</div>
+                                     ) : <span className="font-black text-zinc-600 italic text-xs">VS</span>}
+                                  </div>
+                                  <div className="text-left pl-4 border-l border-zinc-800/50">
+                                    <p className="font-black text-sm text-white uppercase truncate">{fight.f2Name}</p>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+                                  <button onClick={() => openFightModal('edit', fight, cat.id)} className="p-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 rounded-xl transition-colors"><Edit2 size={16} /></button>
+                                  <button onClick={() => removeFight(fight.id, cat.id)} className="p-3 bg-zinc-900 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
+                                  {fight.status === 'finished' && (
+                                    <button onClick={() => triggerPrintLocal('single', { ...fight, category: cat.name, belt: cat.belt, gender: cat.gender })} className="p-3 bg-zinc-900 hover:bg-blue-900/40 text-blue-500 rounded-xl transition-colors"><Printer size={16} /></button>
+                                  )}
+                                  <button onClick={() => handleStartFightInternal(fight, cat)} className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
+                                    {fight.status === 'finished' ? 'Reabrir' : <><Play size={14} fill="currentColor" /> Iniciar</>}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-      </main>
+          {/* Secção Histórico Geral visível sempre em baixo */}
+          <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-300">
+                <History size={20}/> Histórico Completo
+                {!isPremium && <Lock size={16} className="text-yellow-500 ml-2" />}
+              </h2>
+              {fightHistory.length > 0 && isPremium && (
+                <button onClick={() => triggerPrintLocal('all')} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-800 px-4 py-2 rounded-xl flex items-center gap-2">
+                  <Printer size={14} /> Relatório Geral
+                </button>
+              )}
+            </div>
+            
+            {fightHistory.length === 0 ? (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
+                {!isPremium ? "O histórico requer plano Premium." : "Nenhum resultado processado ainda."}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {fightHistory.map(record => (
+                  <div key={record.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 opacity-80 hover:opacity-100 transition-opacity">
+                    <div className="text-[10px] text-zinc-500 font-black tracking-widest uppercase mb-2 border-b border-zinc-800 pb-2 flex justify-between">
+                      <span className="truncate pr-2">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || 'LIVRE'}</span>
+                      <span className="shrink-0">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-green-500 text-xs truncate w-24 uppercase">{record.f1.name}</span>
+                      <span className="font-black text-lg shrink-0">{record.f1.points} x {record.f2.points}</span>
+                      <span className="font-bold text-zinc-400 text-xs truncate w-24 text-right uppercase">{record.f2.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
@@ -909,7 +1048,6 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
   return (
     <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
       
-      {/* Relatório de Impressão */}
       <div className="hidden print:flex flex-col p-4 w-full min-h-screen">
          <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
            <PrintBoletim data={{ category, belt, gender, phase, duration: matchTime / 60, f1: fighter1, f2: fighter2 }} logoUrl={logoUrl} user={user} />
@@ -972,7 +1110,6 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
           </div>
         </div>
 
-        {/* Menu Settings Overlay */}
         {showSettings && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setShowSettings(false)}></div>
@@ -990,7 +1127,6 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
           </>
         )}
 
-        {/* Modal de Conclusão da Luta */}
         {showFinishModal && (
           <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-md">
             <div className={`max-w-lg w-full p-10 rounded-3xl shadow-2xl text-center border border-zinc-800 ${themeClasses.menuBg}`}>
@@ -1035,7 +1171,6 @@ export default function App() {
   const [currentView, setCurrentView] = useState('login'); 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulação de Data Expiração Premium via localStorage p/ Contrato
   const loadPremiumState = (uid) => {
     if (!uid) return false;
     const premiumUntil = localStorage.getItem(`premiumUntil_${uid}`);
@@ -1046,21 +1181,25 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false); 
   const [logoUrl, setLogoUrl] = useState("https://iili.io/qC543c7.png"); 
   
-  // Persistência das Categorias (Para manter enquanto o contrato durar)
   const loadCategories = (uid) => {
     const saved = localStorage.getItem(`categories_${uid}`);
     return saved ? JSON.parse(saved) : [];
   };
+  const loadQueue = (uid) => {
+    const saved = localStorage.getItem(`queue_${uid}`);
+    return saved ? JSON.parse(saved) : [];
+  };
   const [categories, setCategories] = useState([]);
+  const [queue, setQueue] = useState([]);
   const [fightHistory, setFightHistory] = useState([]);
   const [activeFight, setActiveFight] = useState(null);
 
-  // Guarda categorias quando mudam
   useEffect(() => {
     if(user?.uid && isPremium) {
       localStorage.setItem(`categories_${user.uid}`, JSON.stringify(categories));
+      localStorage.setItem(`queue_${user.uid}`, JSON.stringify(queue));
     }
-  }, [categories, user, isPremium]);
+  }, [categories, queue, user, isPremium]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -1068,7 +1207,6 @@ export default function App() {
     
     if (paymentStatus === 'success') {
       setIsPremium(true);
-      // Simula 30 dias de contrato na aprovação
       if(user) localStorage.setItem(`premiumUntil_${user.uid}`, Date.now() + (30 * 24 * 60 * 60 * 1000));
       alert("Pagamento aprovado! Bem-vindo ao Modo Premium.");
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -1094,9 +1232,10 @@ export default function App() {
         
         if (premium) {
           setCategories(loadCategories(currentUser.uid));
+          setQueue(loadQueue(currentUser.uid));
         } else {
-          // Se contrato expirou, limpa ou oculta os dados
           setCategories([]);
+          setQueue([]);
         }
       }
 
@@ -1113,6 +1252,7 @@ export default function App() {
     setUser(null);
     setIsPremium(false); 
     setCategories([]);
+    setQueue([]);
     setCurrentView('login');
   };
 
@@ -1128,30 +1268,34 @@ export default function App() {
       setCategories(prevCats => {
         const newCats = [...prevCats];
         const catIdx = newCats.findIndex(c => c.id === catId);
-        
         if (catIdx !== -1) {
           const fIdx = newCats[catIdx].fights.findIndex(f => f.id === fightId);
-          if (fIdx !== -1) {
-            newCats[catIdx].fights[fIdx] = { ...newCats[catIdx].fights[fIdx], status: 'finished', result: scoreData };
-          }
+          if (fIdx !== -1) newCats[catIdx].fights[fIdx] = { ...newCats[catIdx].fights[fIdx], status: 'finished', result: scoreData };
         }
         return newCats;
+      });
+    } else if (fightId) {
+      setQueue(prevQueue => {
+        const newQueue = [...prevQueue];
+        const fIdx = newQueue.findIndex(f => f.id === fightId);
+        if (fIdx !== -1) newQueue[fIdx] = { ...newQueue[fIdx], status: 'finished', result: scoreData };
+        return newQueue;
       });
     }
 
     setTimeout(() => {
-      if (action === 'next' && catId) {
-        const cat = categories.find(c => c.id === catId);
-        // O state das categorias ainda está a ser atualizado de forma async, 
-        // então procurar na nova estrutura diretamente se o estado antigo não tiver a atualização
-        const currentFightIdx = cat.fights.findIndex(f => f.id === fightId);
-        const nextFight = cat.fights.find((f, i) => i > currentFightIdx && f.status === 'pending');
-        
-        if (nextFight) {
-          setActiveFight({ ...nextFight, catId: cat.id, category: cat.name, belt: cat.belt, gender: cat.gender });
+      if (action === 'next') {
+        if (catId) {
+          const cat = categories.find(c => c.id === catId);
+          const currentFightIdx = cat.fights.findIndex(f => f.id === fightId);
+          const nextFight = cat.fights.find((f, i) => i > currentFightIdx && f.status === 'pending');
+          if (nextFight) setActiveFight({ ...nextFight, catId: cat.id, category: cat.name, belt: cat.belt, gender: cat.gender });
+          else { alert("Não há mais lutas pendentes nesta categoria."); setCurrentView('queue'); }
         } else {
-          alert("Não há mais lutas pendentes nesta categoria.");
-          setCurrentView('queue');
+          const currentFightIdx = queue.findIndex(f => f.id === fightId);
+          const nextFight = queue.find((f, i) => i > currentFightIdx && f.status === 'pending');
+          if (nextFight) setActiveFight(nextFight);
+          else { alert("Não há mais lutas pendentes na fila geral."); setCurrentView('queue'); }
         }
       } else {
         setCurrentView('queue');
@@ -1171,15 +1315,9 @@ export default function App() {
       
       {currentView === 'queue' && (
         <DashboardScreen 
-          user={user} categories={categories} setCategories={setCategories} 
+          user={user} queue={queue} setQueue={setQueue} categories={categories} setCategories={setCategories} 
           onStartFight={startFight} onLogout={handleLogout} 
           isPremium={isPremium} logoUrl={logoUrl} setLogoUrl={setLogoUrl} fightHistory={fightHistory}
-          triggerPrint={(mode, data) => {
-            const printWindow = window;
-            // A visualização real de impressão é tratada localmente dentro do DashboardScreen já no JSX,
-            // então uma função global triggerPrint pode apenas chamar o setState do Dashboard.
-            // Para simplificar, mantive o state e a lógica de Print DENTRO do DashboardScreen.
-          }}
         />
       )}
       
