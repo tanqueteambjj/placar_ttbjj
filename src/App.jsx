@@ -256,7 +256,7 @@ const LoginScreen = ({ onGuestLogin }) => {
         <form onSubmit={handleEmailAuth} className="space-y-4">
           {isRegistering && (
             <div>
-              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição</label>
+              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição (Academia)</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value.toUpperCase())} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-blue-500 uppercase" placeholder="O SEU NOME" />
             </div>
           )}
@@ -328,18 +328,27 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [printMode, setPrintMode] = useState(null); 
 
-  // Modais
+  // Modais de Criação
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showFightModal, setShowFightModal] = useState(false);
   
-  // Estados Formulários
+  // Form States
   const [editingCategory, setEditingCategory] = useState(null);
   const [newCat, setNewCat] = useState({ name: '', belt: '', gender: '' });
   
   const [editingFight, setEditingFight] = useState(null);
   const [addingFightToCat, setAddingFightToCat] = useState(null);
   const [newFight, setNewFight] = useState({ category: '', belt: '', gender: '', phase: 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
+
+  // Cupons
+  const [couponCode, setCouponCode] = useState('');
+  const [couponMessage, setCouponMessage] = useState({ text: '', type: '' });
+  const VALID_COUPONS = {
+    'OSS20': 0.20,
+    'TANQUE50': 0.50,
+    'TESTE100': 0.99
+  };
 
   // Perfil
   const [fullName, setFullName] = useState(localStorage.getItem(`fullName_${user?.uid}`) || '');
@@ -353,7 +362,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
     setShowPaymentModal(true);
   };
 
-  // CRUD CATEGORIAS
+  // CATEGORY CRUD
   const openCategoryModal = (cat = null) => {
     if (!isPremium) return triggerPremiumModal();
     if (cat) {
@@ -369,7 +378,6 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
   const handleSaveCategory = (e) => {
     e.preventDefault();
     const catData = { ...newCat, name: newCat.name.toUpperCase() || 'CATEGORIA GERAL' };
-    
     if (editingCategory) {
       setCategories(categories.map(c => c.id === editingCategory.id ? { ...c, ...catData } : c));
     } else {
@@ -384,11 +392,10 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
     }
   };
 
-  // CRUD LUTAS (Fila Geral ou Categoria)
+  // FIGHT CRUD
   const openFightModal = (mode, data = null, catId = null) => {
     if (!isPremium) return triggerPremiumModal();
-    setAddingFightToCat(catId); // se null, é fila geral
-    
+    setAddingFightToCat(catId); 
     if (mode === 'edit' && data) {
       setEditingFight(data);
       setNewFight({
@@ -411,14 +418,12 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
     };
 
     if (editingFight) {
-      // Update existing fight
       if (addingFightToCat) {
         setCategories(categories.map(c => c.id === addingFightToCat ? { ...c, fights: c.fights.map(f => f.id === editingFight.id ? { ...f, ...fightData } : f) } : c));
       } else {
         setQueue(queue.map(f => f.id === editingFight.id ? { ...f, ...fightData } : f));
       }
     } else {
-      // Add new fight
       const newF = { ...fightData, id: Date.now(), status: 'pending' };
       if (addingFightToCat) {
         setCategories(categories.map(c => c.id === addingFightToCat ? { ...c, fights: [...c.fights, newF] } : c));
@@ -432,12 +437,19 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
 
   const removeFight = (id, catId = null) => {
     if(window.confirm("Tem certeza que deseja remover esta luta?")) {
-      if (catId) {
-        setCategories(categories.map(c => c.id === catId ? { ...c, fights: c.fights.filter(f => f.id !== id) } : c));
-      } else {
-        setQueue(queue.filter(f => f.id !== id));
-      }
+      if (catId) setCategories(categories.map(c => c.id === catId ? { ...c, fights: c.fights.filter(f => f.id !== id) } : c));
+      else setQueue(queue.filter(f => f.id !== id));
     }
+  };
+
+  const handleStartFightInternal = (fight, category) => {
+    onStartFight({
+      ...fight,
+      catId: category.id,
+      category: category.name,
+      belt: category.belt,
+      gender: category.gender
+    });
   };
 
   const triggerPrintLocal = (mode, fight = null) => {
@@ -478,13 +490,32 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
   };
 
   const handlePayment = async (planName, price) => {
+    let finalPrice = price;
+    setCouponMessage({ text: '', type: '' });
+
+    if (couponCode.trim() !== '') {
+      const discount = VALID_COUPONS[couponCode.trim().toUpperCase()];
+      if (discount) {
+        finalPrice = Number((price - (price * discount)).toFixed(2));
+      } else {
+        setCouponMessage({ text: 'Cupom inválido ou expirado.', type: 'error' });
+        return;
+      }
+    }
+
     setIsProcessingPayment(true);
     try {
       const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: [{ title: planName, description: `Acesso Premium - ${planName}`, quantity: 1, currency_id: 'BRL', unit_price: price }],
+          items: [{ 
+            title: planName, 
+            description: `Acesso Premium - ${planName} ${couponCode ? `(Cupom: ${couponCode.toUpperCase()})` : ''}`, 
+            quantity: 1, 
+            currency_id: 'BRL', 
+            unit_price: finalPrice 
+          }],
           back_urls: {
             success: window.location.origin + window.location.pathname + '?payment=success',
             failure: window.location.origin + window.location.pathname + '?payment=failure',
@@ -595,14 +626,31 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
 
         {/* Modal Pagamento */}
         {showPaymentModal && !isPremium && (
-          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative">
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm overflow-y-auto">
+            <div className="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative my-8">
               <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
-              <div className="text-center mb-10">
+              <div className="text-center mb-8">
                 <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
                 <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Desbloquear Premium</h2>
                 <p className="text-zinc-400 mt-2">Ative um plano para libertar a Fila de Lutas, Histórico, Impressão PDF e Logo Customizada.</p>
               </div>
+
+              {/* CAMPO DE CUPOM */}
+              <div className="max-w-sm mx-auto mb-10">
+                <input
+                  type="text"
+                  placeholder="TEM UM CUPÃO DE DESCONTO?"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-center font-bold tracking-widest text-sm transition-colors focus:bg-zinc-900"
+                />
+                {couponMessage.text && (
+                  <p className={`mt-2 text-xs font-bold text-center uppercase tracking-widest ${couponMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                    {couponMessage.text}
+                  </p>
+                )}
+              </div>
+
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="bg-zinc-950 border-2 border-zinc-800 hover:border-blue-500 transition-all rounded-2xl p-6 relative flex flex-col">
                   <div className="flex justify-between items-start mb-4">
@@ -610,7 +658,12 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                     <Zap size={32} className="text-blue-500" />
                   </div>
                   <div className="text-5xl font-black mb-6">R$ 15<span className="text-xl text-zinc-500">,00</span></div>
-                  <button onClick={() => handlePayment("Plano Campeonato", 15)} disabled={isProcessingPayment} className="w-full mt-auto bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
+                  <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Ideal para Campeonatos de Fim de Semana</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Todas as funções desbloqueadas</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Sem renovação automática</li>
+                  </ul>
+                  <button onClick={() => handlePayment("Plano Campeonato (3 Dias)", 15)} disabled={isProcessingPayment} className="w-full mt-auto bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
                     {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
                   </button>
                 </div>
@@ -621,7 +674,12 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                     <Calendar size={32} className="text-yellow-500" />
                   </div>
                   <div className="text-5xl font-black mb-6">R$ 30<span className="text-xl text-zinc-500">,00</span></div>
-                  <button onClick={() => handlePayment("Plano Mensal", 30)} disabled={isProcessingPayment} className="w-full mt-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
+                  <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Perfeito para Academias e Treinos Diários</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Histórico ilimitado guardado no sistema</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Sua própria Logo no Placar e PDFs</li>
+                  </ul>
+                  <button onClick={() => handlePayment("Plano Mensal (30 Dias)", 30)} disabled={isProcessingPayment} className="w-full mt-auto bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-700 text-black font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
                     {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
                   </button>
                 </div>
@@ -667,7 +725,6 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
               <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><GitMerge size={24}/> {editingFight ? 'Editar Luta' : 'Adicionar Luta'}</h2>
               <form onSubmit={handleSaveFight} className="space-y-4">
                 
-                {/* Se for Fila Geral (addingFightToCat === null), mostra campos da categoria avulsa */}
                 {addingFightToCat === null ? (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
@@ -1237,15 +1294,16 @@ export default function App() {
           setCategories([]);
           setQueue([]);
         }
-      }
-
-      if (currentUser && currentView === 'login') {
-        setCurrentView('queue');
+        
+        // Use functional state update to avoid missing dependencies
+        setCurrentView(prev => prev === 'login' ? 'queue' : prev);
+      } else {
+        setCurrentView('login');
       }
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, [currentView]);
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -1286,16 +1344,25 @@ export default function App() {
     setTimeout(() => {
       if (action === 'next') {
         if (catId) {
-          const cat = categories.find(c => c.id === catId);
-          const currentFightIdx = cat.fights.findIndex(f => f.id === fightId);
-          const nextFight = cat.fights.find((f, i) => i > currentFightIdx && f.status === 'pending');
-          if (nextFight) setActiveFight({ ...nextFight, catId: cat.id, category: cat.name, belt: cat.belt, gender: cat.gender });
-          else { alert("Não há mais lutas pendentes nesta categoria."); setCurrentView('queue'); }
+          // Check categories based on current state directly
+          setCategories(currentCats => {
+            const cat = currentCats.find(c => c.id === catId);
+            if (cat) {
+              const currentFightIdx = cat.fights.findIndex(f => f.id === fightId);
+              const nextFight = cat.fights.find((f, i) => i > currentFightIdx && f.status === 'pending');
+              if (nextFight) setActiveFight({ ...nextFight, catId: cat.id, category: cat.name, belt: cat.belt, gender: cat.gender });
+              else { alert("Não há mais lutas pendentes nesta categoria."); setCurrentView('queue'); }
+            }
+            return currentCats;
+          });
         } else {
-          const currentFightIdx = queue.findIndex(f => f.id === fightId);
-          const nextFight = queue.find((f, i) => i > currentFightIdx && f.status === 'pending');
-          if (nextFight) setActiveFight(nextFight);
-          else { alert("Não há mais lutas pendentes na fila geral."); setCurrentView('queue'); }
+          setQueue(currentQueue => {
+            const currentFightIdx = currentQueue.findIndex(f => f.id === fightId);
+            const nextFight = currentQueue.find((f, i) => i > currentFightIdx && f.status === 'pending');
+            if (nextFight) setActiveFight(nextFight);
+            else { alert("Não há mais lutas pendentes na fila geral."); setCurrentView('queue'); }
+            return currentQueue;
+          });
         }
       } else {
         setCurrentView('queue');
