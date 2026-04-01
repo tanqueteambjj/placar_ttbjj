@@ -319,7 +319,6 @@ const LoginScreen = ({ onGuestLogin }) => {
         </div>
 
         <button onClick={handleGoogleLogin} className="w-full mt-6 bg-white hover:bg-gray-100 text-black font-black py-3 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95 uppercase tracking-widest">
-          <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
           Google
         </button>
 
@@ -337,7 +336,7 @@ const LoginScreen = ({ onGuestLogin }) => {
 };
 
 // 3. Tela de Gestão do Evento (Dashboard)
-const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl }) => {
+const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, onClearAll }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [printMode, setPrintMode] = useState(null); 
@@ -355,9 +354,12 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
   
   const [editingFight, setEditingFight] = useState(null);
   const [addingFightToCat, setAddingFightToCat] = useState(null);
-  const [newFight, setNewFight] = useState({ category: '', belt: '', gender: '', phase: 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
+  const [newFight, setNewFight] = useState({ 
+    date: new Date().toISOString().split('T')[0], 
+    category: '', belt: '', gender: '', phase: 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' 
+  });
 
-  // Cupons (Salvos no LocalStorage para persistência do Admin)
+  // Cupons
   const defaultCoupons = { 'OSS20': 0.20, 'TANQUE50': 0.50, 'TESTE100': 0.99 };
   const [coupons, setCoupons] = useState(() => {
     const saved = localStorage.getItem('app_coupons');
@@ -366,15 +368,11 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 
   const [couponCode, setCouponCode] = useState('');
   const [couponMessage, setCouponMessage] = useState({ text: '', type: '' });
-  
-  // CRUD de Cupons (Apenas Admin)
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponDiscount, setNewCouponDiscount] = useState('');
 
   useEffect(() => {
-    if (isAdmin) {
-      localStorage.setItem('app_coupons', JSON.stringify(coupons));
-    }
+    if (isAdmin) localStorage.setItem('app_coupons', JSON.stringify(coupons));
   }, [coupons, isAdmin]);
 
   const handleAddCoupon = (e) => {
@@ -390,13 +388,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
   };
 
   const removeCoupon = (code) => {
-    if(window.confirm(`Remover o cupão ${code}?`)) {
-      setCoupons(prev => {
-        const updated = {...prev};
-        delete updated[code];
-        return updated;
-      });
-    }
+    if(window.confirm(`Remover o cupão ${code}?`)) setCoupons(prev => { const updated = {...prev}; delete updated[code]; return updated; });
   };
 
   // Perfil
@@ -448,23 +440,39 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     if (mode === 'edit' && data) {
       setEditingFight(data);
       setNewFight({
+        date: data.date || new Date().toISOString().split('T')[0],
         category: data.category || '', belt: data.belt || '', gender: data.gender || '', phase: data.phase || 'LUTA LIVRE',
         f1Name: data.f1Name || '', f1Team: data.f1Team || '', f2Name: data.f2Name || '', f2Team: data.f2Team || ''
       });
     } else {
       setEditingFight(null);
-      setNewFight({ category: '', belt: '', gender: '', phase: catId ? 'FASE DE GRUPOS' : 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
+      setNewFight({ 
+        date: new Date().toISOString().split('T')[0], 
+        category: '', belt: '', gender: '', phase: catId ? 'FASE DE GRUPOS' : 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' 
+      });
     }
     setShowFightModal(true);
   };
 
   const handleSaveFight = (e) => {
     e.preventDefault();
+    
     const fightData = { 
       ...newFight, 
       f1Name: newFight.f1Name.toUpperCase(), f1Team: newFight.f1Team.toUpperCase(),
       f2Name: newFight.f2Name.toUpperCase(), f2Team: newFight.f2Team.toUpperCase()
     };
+
+    // Validar limite de 100 lutas por dia (apenas ao adicionar uma nova luta)
+    if (!editingFight) {
+      const selectedDate = newFight.date;
+      const fightsTodayQueue = queue.filter(f => f.date === selectedDate).length;
+      const fightsTodayCats = categories.reduce((sum, cat) => sum + cat.fights.filter(f => f.date === selectedDate).length, 0);
+      
+      if (fightsTodayQueue + fightsTodayCats >= 100) {
+        return alert("Limite de 100 lutas alcançado para a data selecionada.");
+      }
+    }
 
     if (editingFight) {
       if (addingFightToCat) {
@@ -477,7 +485,6 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
       if (addingFightToCat) {
         setCategories(categories.map(c => c.id === addingFightToCat ? { ...c, fights: [...c.fights, newF] } : c));
       } else {
-        if (queue.length >= 15) return alert("Limite atingido na fila livre.");
         setQueue([...queue, newF]);
       }
     }
@@ -582,6 +589,67 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
   };
 
+  // Método para Renderizar a Lista de Lutas Agrupada por Datas
+  const renderFightList = (fightsList, catId = null) => {
+    const grouped = fightsList.reduce((acc, f) => {
+      const d = f.date || new Date(f.id).toISOString().split('T')[0];
+      if (!acc[d]) acc[d] = [];
+      acc[d].push(f);
+      return acc;
+    }, {});
+
+    return Object.keys(grouped).sort().map(dateStr => (
+      <div key={dateStr} className="mb-6 last:mb-0">
+        <div className="flex items-center gap-2 mb-3 border-b border-zinc-800 pb-2">
+          <Calendar size={14} className="text-blue-500" />
+          <h4 className="text-blue-400 font-black uppercase tracking-widest text-[10px]">
+            Data do Evento: {new Date(dateStr + 'T12:00:00').toLocaleDateString()}
+          </h4>
+        </div>
+        <div className="space-y-4">
+          {grouped[dateStr].map((fight, index) => {
+            const winner = fight.status === 'finished' ? getWinner(fight.result) : 0;
+            return (
+              <div key={fight.id} className={`border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'}`}>
+                <div className="hidden md:flex flex-col items-center justify-center px-4 border-r border-zinc-800/50 shrink-0">
+                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">{fight.phase}</span>
+                  <span className="text-zinc-400 font-black text-xl">#{index + 1}</span>
+                </div>
+                
+                <div className="flex-1 w-full grid grid-cols-3 items-center gap-2">
+                  <div className="text-right pr-4 border-r border-zinc-800/50">
+                    <p className={`font-black text-sm uppercase truncate ${winner === 1 ? 'text-yellow-400' : 'text-white'}`}>{fight.f1Name}</p>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
+                  </div>
+                  <div className="text-center flex justify-center">
+                     {fight.status === 'finished' ? (
+                        <div className="font-black text-lg text-green-500 bg-green-500/10 px-3 py-1 rounded-lg border border-green-500/20">{fight.result.f1.points} x {fight.result.f2.points}</div>
+                     ) : <span className="font-black text-zinc-600 italic text-xs">VS</span>}
+                  </div>
+                  <div className="text-left pl-4 border-l border-zinc-800/50">
+                    <p className={`font-black text-sm uppercase truncate ${winner === 2 ? 'text-yellow-400' : 'text-white'}`}>{fight.f2Name}</p>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+                  <button onClick={() => openFightModal('edit', fight, catId)} className="p-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 rounded-xl transition-colors"><Edit2 size={16} /></button>
+                  <button onClick={() => removeFight(fight.id, catId)} className="p-3 bg-zinc-900 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
+                  {fight.status === 'finished' && (
+                    <button onClick={() => triggerPrintLocal('single', catId ? { ...fight, category: categories.find(c => c.id===catId)?.name, belt: categories.find(c => c.id===catId)?.belt, gender: categories.find(c => c.id===catId)?.gender } : fight)} className="p-3 bg-zinc-900 hover:bg-blue-900/40 text-blue-500 rounded-xl transition-colors"><Printer size={16} /></button>
+                  )}
+                  <button onClick={() => catId ? handleStartFightInternal(fight, categories.find(c=>c.id===catId)) : onStartFight(fight)} className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
+                    {fight.status === 'finished' ? 'Reabrir' : <><Play size={14} fill="currentColor" /> Iniciar</>}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className={`min-h-screen bg-zinc-950 text-white font-sans relative ${printMode ? 'print:bg-white print:text-black' : ''}`}>
       
@@ -605,7 +673,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
               <table className="w-full text-sm text-left border-collapse border border-zinc-300">
                 <thead>
                   <tr className="bg-zinc-100">
-                    <th className="border border-zinc-300 p-2 font-black uppercase">Hora</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase">Data/Hora</th>
                     <th className="border border-zinc-300 p-2 font-black uppercase">Categoria / Faixa / Sexo</th>
                     <th className="border border-zinc-300 p-2 font-black uppercase text-right">Lutador 1</th>
                     <th className="border border-zinc-300 p-2 font-black uppercase text-center">Placar</th>
@@ -617,7 +685,10 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                     const winner = getWinner(record);
                     return (
                       <tr key={record.id}>
-                        <td className="border border-zinc-300 p-2 font-mono text-xs">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td className="border border-zinc-300 p-2 font-mono text-xs">
+                          {new Date(record.timestamp).toLocaleDateString()} <br/>
+                          {new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </td>
                         <td className="border border-zinc-300 p-2 font-bold text-xs uppercase">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || '-'}</td>
                         <td className="border border-zinc-300 p-2 text-right">
                           <div className={`font-bold uppercase text-xs ${winner === 1 ? 'underline' : ''}`}>{record.f1.name}</div>
@@ -777,27 +848,34 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
               <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><GitMerge size={24}/> {editingFight ? 'Editar Luta' : 'Adicionar Luta'}</h2>
               <form onSubmit={handleSaveFight} className="space-y-4">
                 
-                {addingFightToCat === null ? (
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Data da Luta</label>
+                    <input type="date" required value={newFight.date} onChange={e => setNewFight({...newFight, date: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs text-zinc-300" />
+                  </div>
+                  
+                  {addingFightToCat === null ? (
+                    <>
+                      <div className="col-span-2">
+                        <input value={newFight.category} onChange={e => setNewFight({...newFight, category: e.target.value.toUpperCase()})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs" placeholder="CATEGORIA / PESO (OPCIONAL)" />
+                      </div>
+                      <select value={newFight.belt} onChange={e => setNewFight({...newFight, belt: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs text-zinc-400">
+                        <option value="">FAIXA...</option>
+                        {BELTS.map(b => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                      <select value={newFight.gender} onChange={e => setNewFight({...newFight, gender: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs text-zinc-400">
+                        <option value="">SEXO...</option><option value="MASCULINO">MASCULINO</option><option value="FEMININO">FEMININO</option>
+                      </select>
+                    </>
+                  ) : (
                     <div className="col-span-2">
-                      <input value={newFight.category} onChange={e => setNewFight({...newFight, category: e.target.value.toUpperCase()})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs" placeholder="CATEGORIA / PESO (OPCIONAL)" />
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Fase da Luta</label>
+                      <select value={newFight.phase} onChange={e => setNewFight({...newFight, phase: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-blue-400 font-bold cursor-pointer">
+                        {PHASES.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
                     </div>
-                    <select value={newFight.belt} onChange={e => setNewFight({...newFight, belt: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs text-zinc-400">
-                      <option value="">FAIXA...</option>
-                      {BELTS.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                    <select value={newFight.gender} onChange={e => setNewFight({...newFight, gender: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-xs text-zinc-400">
-                      <option value="">SEXO...</option><option value="MASCULINO">MASCULINO</option><option value="FEMININO">FEMININO</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Fase da Luta</label>
-                    <select value={newFight.phase} onChange={e => setNewFight({...newFight, phase: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-blue-500 outline-none uppercase text-sm text-blue-400 font-bold cursor-pointer">
-                      {PHASES.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="p-4 bg-zinc-950 rounded-2xl border-l-4 border-green-600 space-y-2 mt-4">
                   <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Lutador 1 (Verde)</span>
@@ -896,7 +974,9 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                   <p className="text-sm text-zinc-500 mt-1">Adicione lutas rápidas fora de uma chave estruturada.</p>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => onStartFight(null)} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-700 px-4 py-3 rounded-xl">Placar Avulso</button>
+                  <button onClick={() => onStartFight(null)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg transition-all">
+                    Placar Avulso {!isPremium && <span className="bg-black/20 px-2 py-0.5 rounded text-[9px] ml-1">GRÁTIS</span>}
+                  </button>
                   <button onClick={() => openFightModal('add')} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg transition-all">
                     <Plus size={16}/> Adicionar Luta
                   </button>
@@ -907,47 +987,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                 {queue.length === 0 ? (
                   <div className="border-2 border-dashed border-zinc-800 rounded-3xl p-16 text-center text-zinc-500 font-medium">Nenhuma luta na fila geral.</div>
                 ) : (
-                  <div className="space-y-4">
-                    {queue.map((fight, index) => {
-                      const winner = fight.status === 'finished' ? getWinner(fight.result) : 0;
-                      return (
-                      <div key={fight.id} className={`bg-zinc-900 border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 hover:border-zinc-700 shadow-lg'}`}>
-                        <div className={`text-zinc-600 font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl shrink-0 ${fight.status === 'finished' ? 'bg-green-900/20 text-green-500' : 'bg-zinc-950'}`}>
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 w-full text-center md:text-left grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
-                          <div className="md:col-span-3 pb-2 border-b border-zinc-800/50 mb-1">
-                            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
-                              {[fight.category, fight.belt, fight.gender].filter(Boolean).join(' • ') || 'SEM CATEGORIA'}
-                            </span>
-                          </div>
-                          <div className="text-right pr-4 border-r border-zinc-800/50">
-                            <p className={`font-black text-sm uppercase truncate ${winner === 1 ? 'text-yellow-400' : 'text-white'}`}>{fight.f1Name}</p>
-                            <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
-                          </div>
-                          <div className="text-center flex justify-center">
-                             {fight.status === 'finished' ? (
-                                <div className="font-black text-lg text-green-500 bg-green-500/10 px-3 py-1 rounded-lg border border-green-500/20">{fight.result.f1.points} x {fight.result.f2.points}</div>
-                             ) : <span className="font-black text-zinc-600 italic text-xs">VS</span>}
-                          </div>
-                          <div className="text-left pl-4 border-l border-zinc-800/50">
-                            <p className={`font-black text-sm uppercase truncate ${winner === 2 ? 'text-yellow-400' : 'text-white'}`}>{fight.f2Name}</p>
-                            <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-4 md:mt-0">
-                          <button onClick={() => openFightModal('edit', fight)} className="p-3 bg-zinc-950 hover:bg-zinc-800 text-zinc-400 rounded-xl transition-colors"><Edit2 size={16} /></button>
-                          <button onClick={() => removeFight(fight.id)} className="p-3 bg-zinc-950 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
-                          {fight.status === 'finished' && (
-                            <button onClick={() => triggerPrintLocal('single', fight)} className="p-3 bg-zinc-950 hover:bg-blue-900/40 text-blue-500 rounded-xl transition-colors"><Printer size={16} /></button>
-                          )}
-                          <button onClick={() => onStartFight(fight)} className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
-                            {fight.status === 'finished' ? 'Reabrir' : <><Play size={14} fill="currentColor" /> Iniciar</>}
-                          </button>
-                        </div>
-                      </div>
-                    )})}
-                  </div>
+                  <div>{renderFightList(queue)}</div>
                 )}
               </div>
             </div>
@@ -962,6 +1002,9 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                   <p className="text-sm text-zinc-500 mt-1">Crie as categorias uma vez e organize as chaves (quartas, semi, final).</p>
                 </div>
                 <div className="flex gap-3 w-full md:w-auto">
+                  <button onClick={() => onStartFight(null)} className="md:hidden flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-xl shadow-lg transition-all">
+                    Placar Avulso
+                  </button>
                   <button onClick={() => openCategoryModal()} className="flex-1 md:w-auto bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
                     <Plus size={16}/> Nova Categoria
                   </button>
@@ -1000,45 +1043,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                         {cat.fights.length === 0 ? (
                           <div className="text-center text-zinc-600 text-sm font-bold uppercase tracking-widest py-8">Chave Vazia</div>
                         ) : (
-                          <div className="space-y-3">
-                            {cat.fights.map((fight, index) => {
-                              const winner = fight.status === 'finished' ? getWinner(fight.result) : 0;
-                              return (
-                              <div key={fight.id} className={`border rounded-2xl p-3 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'}`}>
-                                <div className="hidden md:flex flex-col items-center justify-center px-4 border-r border-zinc-800/50 shrink-0">
-                                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">{fight.phase}</span>
-                                  <span className="text-zinc-400 font-black text-xl">#{index + 1}</span>
-                                </div>
-                                
-                                <div className="flex-1 w-full grid grid-cols-3 items-center gap-2">
-                                  <div className="text-right pr-4 border-r border-zinc-800/50">
-                                    <p className={`font-black text-sm uppercase truncate ${winner === 1 ? 'text-yellow-400' : 'text-white'}`}>{fight.f1Name}</p>
-                                    <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
-                                  </div>
-                                  <div className="text-center flex justify-center">
-                                     {fight.status === 'finished' ? (
-                                        <div className="font-black text-lg text-green-500 bg-green-500/10 px-3 py-1 rounded-lg border border-green-500/20">{fight.result.f1.points} x {fight.result.f2.points}</div>
-                                     ) : <span className="font-black text-zinc-600 italic text-xs">VS</span>}
-                                  </div>
-                                  <div className="text-left pl-4 border-l border-zinc-800/50">
-                                    <p className={`font-black text-sm uppercase truncate ${winner === 2 ? 'text-yellow-400' : 'text-white'}`}>{fight.f2Name}</p>
-                                    <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-4 md:mt-0">
-                                  <button onClick={() => openFightModal('edit', fight, cat.id)} className="p-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 rounded-xl transition-colors"><Edit2 size={16} /></button>
-                                  <button onClick={() => removeFight(fight.id, cat.id)} className="p-3 bg-zinc-900 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors"><Trash2 size={16} /></button>
-                                  {fight.status === 'finished' && (
-                                    <button onClick={() => triggerPrintLocal('single', { ...fight, category: cat.name, belt: cat.belt, gender: cat.gender })} className="p-3 bg-zinc-900 hover:bg-blue-900/40 text-blue-500 rounded-xl transition-colors"><Printer size={16} /></button>
-                                  )}
-                                  <button onClick={() => handleStartFightInternal(fight, cat)} className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
-                                    {fight.status === 'finished' ? 'Reabrir' : <><Play size={14} fill="currentColor" /> Iniciar</>}
-                                  </button>
-                                </div>
-                              </div>
-                            )})}
-                          </div>
+                          <div>{renderFightList(cat.fights, cat.id)}</div>
                         )}
                       </div>
                     </div>
@@ -1048,44 +1053,27 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
             </div>
           )}
 
-          {/* Secção Histórico Geral */}
+          {/* Secção Limpeza e Relatório Geral */}
           {(activeTab === 'queue' || activeTab === 'categories') && (
-            <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col">
-              <div className="flex justify-between items-center mb-6">
+            <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
                 <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-300">
-                  <History size={20}/> Histórico Completo
+                  <Printer size={20}/> Relatórios e Limpeza
                   {!isPremium && <Lock size={16} className="text-yellow-500 ml-2" />}
                 </h2>
-                {fightHistory.length > 0 && isPremium && (
-                  <button onClick={() => triggerPrintLocal('all')} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-800 px-4 py-2 rounded-xl flex items-center gap-2">
-                    <Printer size={14} /> Relatório Geral
-                  </button>
-                )}
+                <p className="text-xs text-zinc-500 font-bold uppercase mt-1">Aviso: Os dados são limpos automaticamente após 5 dias.</p>
               </div>
               
-              {fightHistory.length === 0 ? (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
-                  {!isPremium ? "O histórico requer plano Premium." : "Nenhum resultado processado ainda."}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {fightHistory.map(record => {
-                    const winner = getWinner(record);
-                    return (
-                    <div key={record.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 opacity-80 hover:opacity-100 transition-opacity">
-                      <div className="text-[10px] text-zinc-500 font-black tracking-widest uppercase mb-2 border-b border-zinc-800 pb-2 flex justify-between">
-                        <span className="truncate pr-2">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || 'LIVRE'}</span>
-                        <span className="shrink-0">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                      </div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`font-bold text-xs truncate w-24 uppercase ${winner === 1 ? 'text-yellow-400' : 'text-zinc-300'}`}>{record.f1.name}</span>
-                        <span className="font-black text-lg shrink-0">{record.f1.points} x {record.f2.points}</span>
-                        <span className={`font-bold text-xs truncate w-24 text-right uppercase ${winner === 2 ? 'text-yellow-400' : 'text-zinc-300'}`}>{record.f2.name}</span>
-                      </div>
-                    </div>
-                  )})}
-                </div>
-              )}
+              <div className="flex gap-3">
+                 <button onClick={onClearAll} className="text-xs font-bold uppercase tracking-widest bg-red-900/20 text-red-500 hover:bg-red-900/40 transition-colors border border-red-900/50 px-4 py-3 rounded-xl flex items-center gap-2">
+                    <Trash2 size={14} /> Limpar Tudo
+                 </button>
+                 {fightHistory.length > 0 && isPremium && (
+                   <button onClick={() => triggerPrintLocal('all')} className="text-xs font-bold uppercase tracking-widest bg-zinc-800 text-white hover:bg-zinc-700 transition-colors border border-zinc-700 px-4 py-3 rounded-xl flex items-center gap-2 shadow-lg">
+                     <Printer size={14} /> Imprimir Geral
+                   </button>
+                 )}
+              </div>
             </div>
           )}
         </main>
@@ -1317,7 +1305,7 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
 export default function App() {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('login'); 
-  const [dashboardTab, setDashboardTab] = useState('queue'); // Estado global da aba para não resetar ao voltar
+  const [dashboardTab, setDashboardTab] = useState('queue'); 
   const [isLoading, setIsLoading] = useState(true);
 
   const loadPremiumState = (uid) => {
@@ -1330,14 +1318,28 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false); 
   const [logoUrl, setLogoUrl] = useState("https://iili.io/qC543c7.png"); 
   
+  // Clean Data older than 5 Days
+  const cleanOldData = (dataArray) => {
+    const fiveDaysAgo = Date.now() - (5 * 24 * 60 * 60 * 1000);
+    return dataArray.filter(item => item.id > fiveDaysAgo);
+  };
+
   const loadCategories = (uid) => {
     const saved = localStorage.getItem(`categories_${uid}`);
-    return saved ? JSON.parse(saved) : [];
+    if(!saved) return [];
+    return JSON.parse(saved).map(cat => ({...cat, fights: cleanOldData(cat.fights)}));
   };
+  
   const loadQueue = (uid) => {
     const saved = localStorage.getItem(`queue_${uid}`);
-    return saved ? JSON.parse(saved) : [];
+    return saved ? cleanOldData(JSON.parse(saved)) : [];
   };
+
+  const loadHistory = (uid) => {
+    const saved = localStorage.getItem(`history_${uid}`);
+    return saved ? cleanOldData(JSON.parse(saved)) : [];
+  };
+
   const [categories, setCategories] = useState([]);
   const [queue, setQueue] = useState([]);
   const [fightHistory, setFightHistory] = useState([]);
@@ -1347,8 +1349,9 @@ export default function App() {
     if(user?.uid && isPremium) {
       localStorage.setItem(`categories_${user.uid}`, JSON.stringify(categories));
       localStorage.setItem(`queue_${user.uid}`, JSON.stringify(queue));
+      localStorage.setItem(`history_${user.uid}`, JSON.stringify(fightHistory));
     }
-  }, [categories, queue, user, isPremium]);
+  }, [categories, queue, fightHistory, user, isPremium]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -1382,9 +1385,11 @@ export default function App() {
         if (premium) {
           setCategories(loadCategories(currentUser.uid));
           setQueue(loadQueue(currentUser.uid));
+          setFightHistory(loadHistory(currentUser.uid));
         } else {
           setCategories([]);
           setQueue([]);
+          setFightHistory([]);
         }
         
         setCurrentView(prev => prev === 'login' ? 'queue' : prev);
@@ -1402,12 +1407,22 @@ export default function App() {
     setIsPremium(false); 
     setCategories([]);
     setQueue([]);
+    setFightHistory([]);
     setCurrentView('login');
   };
 
   const startFight = (fightData) => {
     setActiveFight(fightData);
     setCurrentView('scoreboard');
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm("ATENÇÃO! Tem certeza que deseja apagar todas as categorias, lutas na fila e relatórios? Esta ação não pode ser desfeita.")) {
+      setCategories([]);
+      setQueue([]);
+      setFightHistory([]);
+      alert("Todos os dados do evento foram apagados com sucesso.");
+    }
   };
 
   const handleFinishFight = (catId, fightId, scoreData, action) => {
@@ -1474,7 +1489,7 @@ export default function App() {
         <DashboardScreen 
           activeTab={dashboardTab} setActiveTab={setDashboardTab}
           user={user} queue={queue} setQueue={setQueue} categories={categories} setCategories={setCategories} 
-          onStartFight={startFight} onLogout={handleLogout} 
+          onStartFight={startFight} onLogout={handleLogout} onClearAll={handleClearAll}
           isPremium={isPremium} logoUrl={logoUrl} setLogoUrl={setLogoUrl} fightHistory={fightHistory}
         />
       )}
