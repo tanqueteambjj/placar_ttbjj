@@ -41,6 +41,94 @@ const MP_ACCESS_TOKEN = "APP_USR-1453261259159538-031413-5e6302200ef4532780a4d37
 
 // === COMPONENTES DA INTERFACE ===
 
+// Componente Reutilizável de Impressão de Boletim
+const PrintBoletim = ({ data, logoUrl, user }) => {
+  const displayName = user?.displayName || 'SISTEMA OFICIAL';
+  
+  return (
+    <div className="w-full flex-1 flex flex-col relative text-black bg-white">
+      <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-4">
+        <img src={logoUrl} alt="Logo" className="h-24 w-auto max-w-[250px] object-contain" />
+        <div className="text-right">
+          <h1 className="text-3xl font-black tracking-tighter mb-0">BOLETIM DE LUTA</h1>
+          <p className="text-lg font-bold text-zinc-600 uppercase">{displayName}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-zinc-50 p-3 border-l-4 border-black">
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">CATEGORIA / FAIXA / SEXO</p>
+          <p className="text-xl font-black uppercase leading-tight">
+            {[data?.category, data?.belt, data?.gender].filter(Boolean).join(' • ') || 'GERAL / ABSOLUTO'}
+          </p>
+        </div>
+        <div className="bg-zinc-50 p-3 border-r-4 border-black text-right">
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">DURAÇÃO</p>
+          <p className="text-xl font-black uppercase">{data?.duration ? `${data.duration} MINUTOS` : 'N/A'}</p>
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-6 relative">
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
+           <Trophy size={400} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 relative z-10">
+          <div className="border-2 border-black p-4 rounded-2xl bg-white shadow-sm">
+            <div className="border-b-2 border-green-600 mb-4 pb-1">
+              <h2 className="text-2xl font-black leading-none uppercase">{data?.f1?.name || 'LUTADOR 1'}</h2>
+              <p className="text-base font-bold text-zinc-500 mt-1 uppercase">{data?.f1?.team || 'EQUIPE'}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-end border-b border-zinc-100 pb-1">
+                <span className="text-sm font-bold text-zinc-400">PONTOS</span>
+                <span className="text-6xl font-black leading-none">{data?.f1?.points || 0}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold">
+                <span>VANTAGENS</span>
+                <span>{data?.f1?.advantages || 0}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold text-red-600">
+                <span>PUNIÇÕES</span>
+                <span>{data?.f1?.penalties || 0}</span>
+              </div>
+            </div>
+            {(data?.f1?.penalties >= 4) && <div className="mt-4 bg-red-600 text-white font-black text-center py-2 uppercase tracking-widest text-sm rounded">Desclassificado (DQ)</div>}
+          </div>
+
+          <div className="border-2 border-black p-4 rounded-2xl bg-white shadow-sm text-right">
+            <div className="border-b-2 border-zinc-800 mb-4 pb-1">
+              <h2 className="text-2xl font-black leading-none uppercase">{data?.f2?.name || 'LUTADOR 2'}</h2>
+              <p className="text-base font-bold text-zinc-500 mt-1 uppercase">{data?.f2?.team || 'EQUIPE'}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-end border-b border-zinc-100 pb-1 flex-row-reverse">
+                <span className="text-sm font-bold text-zinc-400">PONTOS</span>
+                <span className="text-6xl font-black leading-none">{data?.f2?.points || 0}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold flex-row-reverse">
+                <span>VANTAGENS</span>
+                <span>{data?.f2?.advantages || 0}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold text-red-600 flex-row-reverse">
+                <span>PUNIÇÕES</span>
+                <span>{data?.f2?.penalties || 0}</span>
+              </div>
+            </div>
+            {(data?.f2?.penalties >= 4) && <div className="mt-4 bg-red-600 text-white font-black text-center py-2 uppercase tracking-widest text-sm rounded">Desclassificado (DQ)</div>}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-auto pt-20 pb-4 flex justify-between items-end">
+        <div className="w-48 border-t border-black pt-1 text-center text-[10px] font-bold uppercase">Assinatura Árbitro</div>
+        <div className="text-center italic font-bold text-zinc-400 text-[10px] uppercase">{displayName}</div>
+        <div className="w-48 border-t border-black pt-1 text-center text-[10px] font-bold uppercase">Responsável Mesa</div>
+      </div>
+    </div>
+  );
+};
+
 // 1. Componente do Lutador (Placar)
 const FighterCard = ({ num, data, setFighter, updateScore, isGreenBelt, isDarkMode, themeClasses }) => {
   const bgHeaderColor = isGreenBelt ? 'bg-green-600' : themeClasses.header2Bg;
@@ -106,7 +194,6 @@ const LoginScreen = ({ onGuestLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
 
-  // Requisitos de Senha Forte
   const passReqs = {
     length: password.length >= 8,
     upper: /[A-Z]/.test(password),
@@ -121,14 +208,8 @@ const LoginScreen = ({ onGuestLogin }) => {
     setError('');
     try {
       if (isRegistering) {
-        if (password !== confirmPassword) {
-          setError("As senhas não coincidem.");
-          return;
-        }
-        if (!isPasswordValid) {
-          setError("A senha não cumpre todos os requisitos de segurança.");
-          return;
-        }
+        if (password !== confirmPassword) { setError("As senhas não coincidem."); return; }
+        if (!isPasswordValid) { setError("A senha não cumpre todos os requisitos de segurança."); return; }
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name.toUpperCase() });
@@ -142,18 +223,14 @@ const LoginScreen = ({ onGuestLogin }) => {
   };
 
   const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      setError("Erro no Google Login. Verifique domínios autorizados no Firebase.");
-    }
+    try { await signInWithPopup(auth, googleProvider); } 
+    catch (err) { setError("Erro no Google Login. Verifique domínios autorizados no Firebase."); }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
       <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
-        
         <div className="text-center mb-8">
           <img src="https://iili.io/qC543c7.png" alt="Logo" className="h-24 w-auto mx-auto mb-4 drop-shadow-lg" />
           <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Tanque Team BJJ</h1>
@@ -165,7 +242,7 @@ const LoginScreen = ({ onGuestLogin }) => {
         <form onSubmit={handleEmailAuth} className="space-y-4">
           {isRegistering && (
             <div>
-              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome / Academia</label>
+              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição (Academia)</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value.toUpperCase())} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 uppercase" placeholder="O SEU NOME" />
             </div>
           )}
@@ -177,7 +254,6 @@ const LoginScreen = ({ onGuestLogin }) => {
             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Senha</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" placeholder="••••••••" />
             
-            {/* Visualização de Requisitos da Senha em Tempo Real */}
             {isRegistering && (
               <div className="mt-3 p-3 bg-zinc-950 rounded-lg border border-zinc-800 space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Requisitos de Segurança:</p>
@@ -240,14 +316,14 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
   const [newFight, setNewFight] = useState({ category: '', belt: '', gender: '', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [printMode, setPrintMode] = useState(null); 
 
-  // Estados do Perfil
+  const [fullName, setFullName] = useState(localStorage.getItem(`fullName_${user?.uid}`) || '');
   const [profileName, setProfileName] = useState(user?.displayName || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [profileMessage, setProfileMessage] = useState({ text: '', type: '' });
 
-  // Força abertura do Modal Premium para usuários gratuitos
   const triggerPremiumModal = (e) => {
     if (e) e.preventDefault();
     setShowPaymentModal(true);
@@ -256,17 +332,28 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
   const handleAddFight = (e) => {
     e.preventDefault();
     if (!isPremium) return triggerPremiumModal();
-
     if (queue.length >= 10) return alert("Limite de 10 lutas atingido na fila.");
     setQueue([...queue, { ...newFight, id: Date.now(), status: 'pending' }]);
     setNewFight({ category: '', belt: '', gender: '', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
   };
 
-  const removeFight = (id) => setQueue(queue.filter(f => f.id !== id));
+  const removeFight = (id) => {
+    if(window.confirm("Tem certeza que deseja remover esta luta da fila?")) {
+      setQueue(queue.filter(f => f.id !== id));
+    }
+  };
+
+  const triggerPrint = (mode, fight = null) => {
+    if (!isPremium) return triggerPremiumModal();
+    setPrintMode({ type: mode, data: fight });
+    setTimeout(() => {
+      window.print();
+      setPrintMode(null);
+    }, 100);
+  };
 
   const handleLogoUpload = (e) => {
     if (!isPremium) return triggerPremiumModal(e);
-
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -278,10 +365,11 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     if (!isPremium) return triggerPremiumModal();
-
     setProfileMessage({ text: '', type: '' });
 
     try {
+      localStorage.setItem(`fullName_${user?.uid}`, fullName);
+
       if (profileName !== user.displayName) {
         await updateProfile(auth.currentUser, { displayName: profileName.toUpperCase() });
       }
@@ -311,7 +399,6 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
     }
   };
 
-  // Integração Mercado Pago
   const handlePayment = async (planName, price) => {
     setIsProcessingPayment(true);
     try {
@@ -328,7 +415,6 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
           auto_return: 'approved'
         })
       });
-
       const data = await response.json();
       if (data.init_point) window.location.href = data.init_point; 
       else throw new Error("Falha no link.");
@@ -339,234 +425,263 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-4 md:p-8 font-sans relative">
+    <div className={`min-h-screen bg-zinc-950 text-white font-sans relative ${printMode ? 'print:bg-white print:text-black' : ''}`}>
       
-      {/* MODAL DE PAGAMENTO (MERCADO PAGO) */}
-      {showPaymentModal && !isPremium && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative">
-            <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
-            
-            <div className="text-center mb-10">
-              <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Desbloquear Premium</h2>
-              <p className="text-zinc-400 mt-2">Ative um plano para libertar a Fila de Lutas, Histórico, Impressão PDF e Logo Customizada.</p>
+      {/* SECÇÃO IMPRESSÃO (Apenas Visível no Print) */}
+      {printMode && (
+        <div className="hidden print:flex flex-col p-4 w-full min-h-screen">
+          {printMode.type === 'single' && (
+            <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
+              <PrintBoletim data={{...printMode.data, ...printMode.data.result}} logoUrl={logoUrl} user={user} />
             </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Plano Campeonato */}
-              <div className="bg-zinc-950 border-2 border-zinc-800 hover:border-blue-500 transition-all rounded-2xl p-6 relative flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-2xl font-black uppercase text-blue-400">Passe Torneio</h3>
-                    <p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 3 Dias</p>
-                  </div>
-                  <Zap size={32} className="text-blue-500" />
+          )}
+          {printMode.type === 'all' && (
+            <div className="w-full">
+              <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+                <img src={logoUrl} alt="Logo" className="h-16 w-auto object-contain" />
+                <div className="text-right">
+                  <h1 className="text-2xl font-black tracking-tighter mb-0">RELATÓRIO GERAL DE LUTAS</h1>
+                  <p className="text-sm font-bold text-zinc-600 uppercase">{user?.displayName || 'SISTEMA OFICIAL'}</p>
                 </div>
-                <div className="text-5xl font-black mb-6">R$ 15<span className="text-xl text-zinc-500">,00</span></div>
-                <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Ideal para Campeonatos de Fim de Semana</li>
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Todas as funções desbloqueadas</li>
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Sem renovação automática</li>
-                </ul>
-                <button 
-                  onClick={() => handlePayment("Plano Campeonato (3 Dias)", 15)}
-                  disabled={isProcessingPayment}
-                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-black py-4 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2"
-                >
-                  {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX ou Cartão</>}
-                </button>
               </div>
-
-              {/* Plano Mensal */}
-              <div className="bg-zinc-950 border-2 border-yellow-500 rounded-2xl p-6 relative flex flex-col shadow-[0_0_30px_rgba(234,179,8,0.15)]">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">
-                  Mais Popular
-                </div>
-                <div className="flex justify-between items-start mb-4 mt-2">
-                  <div>
-                    <h3 className="text-2xl font-black uppercase text-yellow-500">Plano Mensal</h3>
-                    <p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 30 Dias</p>
-                  </div>
-                  <Calendar size={32} className="text-yellow-500" />
-                </div>
-                <div className="text-5xl font-black mb-6">R$ 30<span className="text-xl text-zinc-500">,00</span></div>
-                <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Perfeito para Academias e Treinos Diários</li>
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Histórico ilimitado guardado no sistema</li>
-                  <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Sua própria Logo no Placar e PDFs</li>
-                </ul>
-                <button 
-                  onClick={() => handlePayment("Plano Mensal (30 Dias)", 30)}
-                  disabled={isProcessingPayment}
-                  className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-700 text-black font-black py-4 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2"
-                >
-                  {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX ou Cartão</>}
-                </button>
-              </div>
+              <table className="w-full text-sm text-left border-collapse border border-zinc-300">
+                <thead>
+                  <tr className="bg-zinc-100">
+                    <th className="border border-zinc-300 p-2 font-black uppercase">Hora</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase">Categoria / Faixa / Sexo</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase text-right">Lutador 1</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase text-center">Placar</th>
+                    <th className="border border-zinc-300 p-2 font-black uppercase">Lutador 2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fightHistory.map(record => (
+                    <tr key={record.id}>
+                      <td className="border border-zinc-300 p-2 font-mono text-xs">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                      <td className="border border-zinc-300 p-2 font-bold text-xs uppercase">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || '-'}</td>
+                      <td className="border border-zinc-300 p-2 text-right">
+                        <div className="font-bold uppercase text-xs">{record.f1.name}</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">V:{record.f1.advantages} P:{record.f1.penalties}</div>
+                      </td>
+                      <td className="border border-zinc-300 p-2 text-center font-black text-lg bg-zinc-50">
+                        {record.f1.points} x {record.f2.points}
+                      </td>
+                      <td className="border border-zinc-300 p-2 text-left">
+                        <div className="font-bold uppercase text-xs">{record.f2.name}</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">V:{record.f2.advantages} P:{record.f2.penalties}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="mt-8 text-center text-xs font-bold text-zinc-400">Documento gerado oficialmente pelo sistema Tanque Team BJJ.</div>
             </div>
-            
-            <div className="text-center mt-6 text-xs text-zinc-500 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-              <Lock size={12} /> Pagamento Seguro Processado pelo Mercado Pago
-            </div>
-          </div>
+          )}
         </div>
       )}
 
-      <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-zinc-800 pb-6">
-        <div className="flex items-center gap-4">
-          <label onClick={(e) => { if(!isPremium) triggerPremiumModal(e); }} className="relative group cursor-pointer block">
-            <img src={logoUrl} alt="Logo" className="h-16 w-auto drop-shadow-lg object-contain bg-white/10 rounded" />
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded transition-opacity" title="Alterar Logo">
-              <ImagePlus className="text-white" size={24} />
-            </div>
-            <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={!isPremium} />
-            {!isPremium && <div className="absolute -bottom-2 -right-2 bg-yellow-500 text-black p-1 rounded-full"><Lock size={10} /></div>}
-          </label>
-          <div>
-            <h1 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-2">
-              Painel de Evento
-              {isPremium ? <Crown size={20} className="text-yellow-500" /> : <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded-full">GRATUITO</span>}
-            </h1>
-            <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">{user?.displayName || user?.email || 'Convidado'}</p>
-          </div>
-        </div>
-        <button onClick={onLogout} className="text-zinc-500 hover:text-red-500 font-bold text-sm uppercase tracking-widest transition-colors flex items-center gap-2">
-          <LogOut size={16} /> <span className="hidden md:inline">Sair</span>
-        </button>
-      </header>
-
-      <main className="max-w-6xl mx-auto">
-        
-        {/* ABAS DE NAVEGAÇÃO */}
-        <div className="flex gap-6 mb-8 border-b border-zinc-800">
-          <button 
-            onClick={() => setActiveTab('fights')} 
-            className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'fights' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}
-          >
-            Fila de Lutas
-          </button>
-          <button 
-            onClick={() => setActiveTab('account')} 
-            className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'account' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}
-          >
-            A Minha Conta
-          </button>
-        </div>
-
-        {/* CONTEÚDO DA ABA: MINHA CONTA */}
-        {activeTab === 'account' && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Gestão de Perfil */}
-            <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl relative overflow-hidden">
-              <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-zinc-300">
-                <User size={24}/> Detalhes do Perfil
-              </h2>
+      {/* MODAL DE PAGAMENTO E CONTEÚDO PRINCIPAL */}
+      <div className="print:hidden">
+        {showPaymentModal && !isPremium && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative">
+              <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
               
-              {user?.email === 'Conta Gratuita' ? (
-                <p className="text-zinc-500 text-sm">Está num modo de visitante temporário. Crie uma conta real para gerenciar o perfil.</p>
-              ) : (
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
-                  {profileMessage.text && (
-                    <div className={`p-3 rounded-lg text-sm mb-4 text-center font-bold ${profileMessage.type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-500' : 'bg-green-900/50 text-green-200 border border-green-500'}`}>
-                      {profileMessage.text}
-                    </div>
-                  )}
+              <div className="text-center mb-10">
+                <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
+                <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Desbloquear Premium</h2>
+                <p className="text-zinc-400 mt-2">Ative um plano para libertar a Fila de Lutas, Histórico, Impressão PDF e Logo Customizada.</p>
+              </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição</label>
-                    <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase" placeholder="O SEU NOME" />
-                  </div>
-                  
-                  <div className="pt-4 border-t border-zinc-800 mt-4">
-                    <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4">Alterar Senha de Acesso</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Nova Senha Forte" />
-                      </div>
-                      <div>
-                        <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Confirmar Nova Senha" />
-                      </div>
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="bg-zinc-950 border-2 border-zinc-800 hover:border-blue-500 transition-all rounded-2xl p-6 relative flex flex-col">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-2xl font-black uppercase text-blue-400">Passe Torneio</h3>
+                      <p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 3 Dias</p>
                     </div>
+                    <Zap size={32} className="text-blue-500" />
                   </div>
-
-                  <button type="submit" className={`w-full font-black py-4 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-6 flex justify-center items-center gap-2 ${isPremium ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'}`}>
-                    {!isPremium && <Lock size={16}/>}
-                    Salvar Alterações
+                  <div className="text-5xl font-black mb-6">R$ 15<span className="text-xl text-zinc-500">,00</span></div>
+                  <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Ideal para Campeonatos de Fim de Semana</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Todas as funções desbloqueadas</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Sem renovação automática</li>
+                  </ul>
+                  <button onClick={() => handlePayment("Plano Campeonato (3 Dias)", 15)} disabled={isProcessingPayment} className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-black py-4 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
+                    {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX ou Cartão</>}
                   </button>
-                </form>
-              )}
-            </div>
+                </div>
 
-            {/* Gestão de Plano */}
-            <div>
-               {isPremium ? (
-                  <div className="bg-zinc-900 border border-yellow-500/30 p-8 rounded-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black px-4 py-1 rounded-bl-xl uppercase tracking-widest">
-                      Ativo
-                    </div>
-                    <Crown size={48} className="text-yellow-500 mb-4" />
-                    <h2 className="text-3xl font-black text-white uppercase mb-2 tracking-tighter">Plano Premium</h2>
-                    <p className="text-zinc-400 mb-6 font-medium">Todas as funcionalidades profissionais estão desbloqueadas para a sua conta.</p>
-                    
-                    <ul className="space-y-3 text-sm text-zinc-300 font-bold mb-8">
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Fila de Lutas Ilimitada</li>
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Histórico de Lutas Salvo</li>
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Logo Personalizada no Placar</li>
-                      <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Impressão de Boletim (PDF)</li>
-                    </ul>
+                <div className="bg-zinc-950 border-2 border-yellow-500 rounded-2xl p-6 relative flex flex-col shadow-[0_0_30px_rgba(234,179,8,0.15)]">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">
+                    Mais Popular
                   </div>
-               ) : (
-                 <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl">
-                    <h2 className="text-2xl font-black text-white uppercase mb-6 tracking-tighter text-center border-b border-zinc-800 pb-4">Faça Upgrade para Premium</h2>
-                    
-                    <div className="space-y-6">
-                      {/* Plano Campeonato */}
-                      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="text-lg font-black uppercase text-blue-400">Passe Torneio</h3>
-                            <p className="text-zinc-500 font-bold text-[10px] uppercase">Acesso por 3 Dias</p>
-                          </div>
-                          <div className="text-2xl font-black">R$ 15</div>
-                        </div>
-                        <button onClick={() => handlePayment("Plano Campeonato", 15)} disabled={isProcessingPayment} className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-black py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-sm mt-4 uppercase tracking-widest">
-                          {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={18} /> Pagar com PIX/Cartão</>}
-                        </button>
-                      </div>
-
-                      {/* Plano Mensal */}
-                      <div className="bg-zinc-950 border border-yellow-500/50 rounded-2xl p-6 relative">
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-[9px] font-black px-3 py-0.5 rounded-full uppercase tracking-widest">
-                          Mais Popular
-                        </div>
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="text-lg font-black uppercase text-yellow-500">Plano Mensal</h3>
-                            <p className="text-zinc-500 font-bold text-[10px] uppercase">Acesso por 30 Dias</p>
-                          </div>
-                          <div className="text-2xl font-black">R$ 30</div>
-                        </div>
-                        <button onClick={() => handlePayment("Plano Mensal", 30)} disabled={isProcessingPayment} className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-700 text-black font-black py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-sm mt-4 uppercase tracking-widest">
-                          {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={18} /> Pagar com PIX/Cartão</>}
-                        </button>
-                      </div>
+                  <div className="flex justify-between items-start mb-4 mt-2">
+                    <div>
+                      <h3 className="text-2xl font-black uppercase text-yellow-500">Plano Mensal</h3>
+                      <p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 30 Dias</p>
                     </div>
-                 </div>
-               )}
+                    <Calendar size={32} className="text-yellow-500" />
+                  </div>
+                  <div className="text-5xl font-black mb-6">R$ 30<span className="text-xl text-zinc-500">,00</span></div>
+                  <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Perfeito para Academias e Treinos Diários</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Histórico ilimitado guardado no sistema</li>
+                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Sua própria Logo no Placar e PDFs</li>
+                  </ul>
+                  <button onClick={() => handlePayment("Plano Mensal (30 Dias)", 30)} disabled={isProcessingPayment} className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-700 text-black font-black py-4 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
+                    {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX ou Cartão</>}
+                  </button>
+                </div>
+              </div>
+              <div className="text-center mt-6 text-xs text-zinc-500 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                <Lock size={12} /> Pagamento Seguro Processado pelo Mercado Pago
+              </div>
             </div>
           </div>
         )}
 
-        {/* CONTEÚDO DA ABA: FILA DE LUTAS */}
+        <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-zinc-800 pb-6 pt-4 md:pt-8">
+          <div className="flex items-center gap-4">
+            <label onClick={(e) => { if(!isPremium) triggerPremiumModal(e); }} className="relative group cursor-pointer block">
+              <img src={logoUrl} alt="Logo" className="h-16 w-auto drop-shadow-lg object-contain bg-white/10 rounded" />
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded transition-opacity" title="Alterar Logo">
+                <ImagePlus className="text-white" size={24} />
+              </div>
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={!isPremium} />
+              {!isPremium && <div className="absolute -bottom-2 -right-2 bg-yellow-500 text-black p-1 rounded-full"><Lock size={10} /></div>}
+            </label>
+            <div>
+              <h1 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-2">
+                Painel de Evento
+                {isPremium ? <Crown size={20} className="text-yellow-500" /> : <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded-full">GRATUITO</span>}
+              </h1>
+              <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">{user?.displayName || user?.email || 'Convidado'}</p>
+            </div>
+          </div>
+          <button onClick={onLogout} className="text-zinc-500 hover:text-red-500 font-bold text-sm uppercase tracking-widest transition-colors flex items-center gap-2">
+            <LogOut size={16} /> <span className="hidden md:inline">Sair</span>
+          </button>
+        </header>
+
+        <main className="max-w-6xl mx-auto">
+          
+          <div className="flex gap-6 mb-8 border-b border-zinc-800">
+            <button onClick={() => setActiveTab('fights')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'fights' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>
+              Fila de Lutas
+            </button>
+            <button onClick={() => setActiveTab('account')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'account' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>
+              A Minha Conta
+            </button>
+          </div>
+
+          {activeTab === 'account' && (
+            <div className="grid lg:grid-cols-2 gap-8">
+              <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl relative overflow-hidden">
+                <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-zinc-300">
+                  <User size={24}/> Detalhes do Perfil
+                </h2>
+                
+                {user?.email === 'Conta Gratuita' ? (
+                  <p className="text-zinc-500 text-sm">Está num modo de visitante temporário. Crie uma conta real para gerenciar o perfil.</p>
+                ) : (
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    {profileMessage.text && (
+                      <div className={`p-3 rounded-lg text-sm mb-4 text-center font-bold ${profileMessage.type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-500' : 'bg-green-900/50 text-green-200 border border-green-500'}`}>
+                        {profileMessage.text}
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome Completo</label>
+                      <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase" placeholder="SEU NOME COMPLETO" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">
+                        Nome de Exibição <span className="text-blue-500 lowercase normal-case font-normal">(Será exibido no placar e na impressão)</span>
+                      </label>
+                      <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase" placeholder="EX: TANQUE TEAM MATRIZ" />
+                    </div>
+                    
+                    <div className="pt-4 border-t border-zinc-800 mt-4">
+                      <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4">Alterar Senha de Acesso</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Nova Senha Forte" />
+                        </div>
+                        <div>
+                          <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Confirmar Nova Senha" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button type="submit" className={`w-full font-black py-4 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-6 flex justify-center items-center gap-2 ${isPremium ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'}`}>
+                      {!isPremium && <Lock size={16}/>}
+                      Salvar Alterações
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              <div>
+                 {isPremium ? (
+                    <div className="bg-zinc-900 border border-yellow-500/30 p-8 rounded-3xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black px-4 py-1 rounded-bl-xl uppercase tracking-widest">Ativo</div>
+                      <Crown size={48} className="text-yellow-500 mb-4" />
+                      <h2 className="text-3xl font-black text-white uppercase mb-2 tracking-tighter">Plano Premium</h2>
+                      <p className="text-zinc-400 mb-6 font-medium">Todas as funcionalidades profissionais estão desbloqueadas para a sua conta.</p>
+                      <ul className="space-y-3 text-sm text-zinc-300 font-bold mb-8">
+                        <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Fila de Lutas Ilimitada</li>
+                        <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Histórico de Lutas Salvo</li>
+                        <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Logo Personalizada no Placar</li>
+                        <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Impressão de Boletim (PDF)</li>
+                      </ul>
+                    </div>
+                 ) : (
+                   <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl">
+                      <h2 className="text-2xl font-black text-white uppercase mb-6 tracking-tighter text-center border-b border-zinc-800 pb-4">Faça Upgrade para Premium</h2>
+                      <div className="space-y-6">
+                        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="text-lg font-black uppercase text-blue-400">Passe Torneio</h3>
+                              <p className="text-zinc-500 font-bold text-[10px] uppercase">Acesso por 3 Dias</p>
+                            </div>
+                            <div className="text-2xl font-black">R$ 15</div>
+                          </div>
+                          <button onClick={() => handlePayment("Plano Campeonato", 15)} disabled={isProcessingPayment} className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-black py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-sm mt-4 uppercase tracking-widest">
+                            {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={18} /> Pagar com PIX/Cartão</>}
+                          </button>
+                        </div>
+
+                        <div className="bg-zinc-950 border border-yellow-500/50 rounded-2xl p-6 relative">
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-[9px] font-black px-3 py-0.5 rounded-full uppercase tracking-widest">Mais Popular</div>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="text-lg font-black uppercase text-yellow-500">Plano Mensal</h3>
+                              <p className="text-zinc-500 font-bold text-[10px] uppercase">Acesso por 30 Dias</p>
+                            </div>
+                            <div className="text-2xl font-black">R$ 30</div>
+                          </div>
+                          <button onClick={() => handlePayment("Plano Mensal", 30)} disabled={isProcessingPayment} className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-700 text-black font-black py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-sm mt-4 uppercase tracking-widest">
+                            {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={18} /> Pagar com PIX/Cartão</>}
+                          </button>
+                        </div>
+                      </div>
+                   </div>
+                 )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'fights' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Formulário de Adição */}
             <div className="lg:col-span-1 bg-zinc-900 p-6 rounded-3xl border border-zinc-800 h-fit">
               <h2 className="text-lg font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-blue-500">
                 <Plus size={20}/> Preparar Luta ({queue.length}/10)
               </h2>
-              
               <form onSubmit={handleAddFight} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
                   <div className="col-span-full">
@@ -611,7 +726,6 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
               </form>
             </div>
 
-            {/* Fila de Lutas */}
             <div className="lg:col-span-2">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-300">
@@ -630,7 +744,6 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
                 <div className="space-y-4">
                   {queue.map((fight, index) => (
                     <div key={fight.id} className={`bg-zinc-900 border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 opacity-80' : 'border-zinc-800 hover:border-zinc-700 shadow-lg'}`}>
-                      
                       <div className={`text-zinc-600 font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl shrink-0 ${fight.status === 'finished' ? 'bg-green-900/20 text-green-500' : 'bg-zinc-950'}`}>
                         {index + 1}
                       </div>
@@ -647,7 +760,6 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
                           <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
                         </div>
                         
-                        {/* Mostra VS ou Placar se Finalizada */}
                         <div className="flex justify-center">
                            {fight.status === 'finished' ? (
                               <div className="font-black text-lg text-green-500 bg-green-500/10 px-3 py-1 rounded-lg">
@@ -668,10 +780,14 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
                         <button onClick={() => removeFight(fight.id)} className="p-3 bg-zinc-950 hover:bg-red-900/40 text-red-500 rounded-xl transition-colors">
                           <Trash2 size={18} />
                         </button>
-                        <button 
-                          onClick={() => onStartFight(fight)} 
-                          className={`flex-1 md:w-auto px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg active:scale-95'}`}
-                        >
+                        
+                        {fight.status === 'finished' && (
+                          <button onClick={() => triggerPrint('single', fight)} className="p-3 bg-zinc-950 hover:bg-blue-900/40 text-blue-500 rounded-xl transition-colors" title="Imprimir Resultado Desta Luta">
+                            <Printer size={18} />
+                          </button>
+                        )}
+
+                        <button onClick={() => onStartFight(fight)} className={`flex-1 md:w-auto px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 ${fight.status === 'finished' ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg active:scale-95'}`}>
                           {fight.status === 'finished' ? 'Reabrir' : <><Play size={16} fill="currentColor" /> Iniciar</>}
                         </button>
                       </div>
@@ -685,11 +801,18 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
 
         {/* Secção de Histórico - Visível na aba Fila */}
         {activeTab === 'fights' && (
-          <div className="mt-12 pt-8 border-t border-zinc-800">
-            <h2 className="text-lg font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-zinc-300">
-              <History size={20}/> Histórico Guardado
-              {!isPremium && <Lock size={16} className="text-yellow-500 ml-2" />}
-            </h2>
+          <div className="mt-12 pt-8 border-t border-zinc-800 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-300">
+                <History size={20}/> Histórico Guardado
+                {!isPremium && <Lock size={16} className="text-yellow-500 ml-2" />}
+              </h2>
+              {fightHistory.length > 0 && isPremium && (
+                <button onClick={() => triggerPrint('all')} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-800 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                  <Printer size={14} /> Imprimir Geral
+                </button>
+              )}
+            </div>
             
             {fightHistory.length === 0 ? (
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
@@ -714,14 +837,14 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
             )}
           </div>
         )}
-
-      </main>
+        </main>
+      </div>
     </div>
   );
-}
+};
 
 // 4. Ecrã Principal do Placar
-const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl, onFinishFight }) => {
+const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl, onFinishFight, user }) => {
   const [matchTime, setMatchTime] = useState(300);
   const [timeLeft, setTimeLeft] = useState(matchTime);
   const [isRunning, setIsRunning] = useState(false);
@@ -796,6 +919,7 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
       category,
       belt,
       gender,
+      duration: matchTime / 60,
       f1: { ...fighter1 },
       f2: { ...fighter2 }
     };
@@ -835,85 +959,10 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
     <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
       
       {/* Relatório de Impressão */}
-      <div className="hidden print:flex flex-col p-4 text-black bg-white min-h-screen border-[8px] border-double border-zinc-300">
-        <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-4">
-          <img src={logoUrl} alt="Logo" className="h-24 w-auto max-w-[250px] object-contain" />
-          <div className="text-right">
-            <h1 className="text-3xl font-black tracking-tighter mb-0">BOLETIM DE LUTA</h1>
-            <p className="text-lg font-bold text-zinc-600">SISTEMA OFICIAL</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-zinc-50 p-3 border-l-4 border-black">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">CATEGORIA / FAIXA / SEXO</p>
-            <p className="text-xl font-black uppercase leading-tight">
-              {[category, belt, gender].filter(Boolean).join(' • ') || 'GERAL / ABSOLUTO'}
-            </p>
-          </div>
-          <div className="bg-zinc-50 p-3 border-r-4 border-black text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0">DURAÇÃO</p>
-            <p className="text-xl font-black uppercase">{matchTime / 60} MINUTOS</p>
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-6 relative">
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
-             <Trophy size={400} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 relative z-10">
-            <div className="border-2 border-black p-4 rounded-2xl bg-white shadow-sm">
-              <div className="border-b-2 border-green-600 mb-4 pb-1">
-                <h2 className="text-2xl font-black leading-none uppercase">{fighter1.name || 'LUTADOR 1'}</h2>
-                <p className="text-base font-bold text-zinc-500 mt-1 uppercase">{fighter1.team || 'EQUIPE'}</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-end border-b border-zinc-100 pb-1">
-                  <span className="text-sm font-bold text-zinc-400">PONTOS</span>
-                  <span className="text-6xl font-black leading-none">{fighter1.points}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold">
-                  <span>VANTAGENS</span>
-                  <span>{fighter1.advantages}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold text-red-600">
-                  <span>PUNIÇÕES</span>
-                  <span>{fighter1.penalties}</span>
-                </div>
-              </div>
-              {fighter1.penalties >= 4 && <div className="mt-4 bg-red-600 text-white font-black text-center py-2 uppercase tracking-widest text-sm rounded">Desclassificado (DQ)</div>}
-            </div>
-
-            <div className="border-2 border-black p-4 rounded-2xl bg-white shadow-sm text-right">
-              <div className="border-b-2 border-zinc-800 mb-4 pb-1">
-                <h2 className="text-2xl font-black leading-none uppercase">{fighter2.name || 'LUTADOR 2'}</h2>
-                <p className="text-base font-bold text-zinc-500 mt-1 uppercase">{fighter2.team || 'EQUIPE'}</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-end border-b border-zinc-100 pb-1 flex-row-reverse">
-                  <span className="text-sm font-bold text-zinc-400">PONTOS</span>
-                  <span className="text-6xl font-black leading-none">{fighter2.points}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold flex-row-reverse">
-                  <span>VANTAGENS</span>
-                  <span>{fighter2.advantages}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold text-red-600 flex-row-reverse">
-                  <span>PUNIÇÕES</span>
-                  <span>{fighter2.penalties}</span>
-                </div>
-              </div>
-              {fighter2.penalties >= 4 && <div className="mt-4 bg-red-600 text-white font-black text-center py-2 uppercase tracking-widest text-sm rounded">Desclassificado (DQ)</div>}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-auto pt-20 pb-4 flex justify-between items-end">
-          <div className="w-48 border-t border-black pt-1 text-center text-[10px] font-bold uppercase">Assinatura Árbitro</div>
-          <div className="text-center italic font-bold text-zinc-400 text-[10px]">Gestão de Placar Desportivo</div>
-          <div className="w-48 border-t border-black pt-1 text-center text-[10px] font-bold uppercase">Responsável Mesa</div>
-        </div>
+      <div className="hidden print:flex flex-col p-4 w-full min-h-screen">
+         <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
+           <PrintBoletim data={{ category, belt, gender, duration: matchTime / 60, f1: fighter1, f2: fighter2 }} logoUrl={logoUrl} user={user} />
+         </div>
       </div>
 
       <div className="flex flex-col min-h-screen print:hidden">
@@ -1155,7 +1204,7 @@ export default function App() {
       {currentView === 'scoreboard' && (
         <ScoreboardScreen 
           initialFightData={activeFight} onBackToQueue={() => setCurrentView('queue')} 
-          isPremium={isPremium} logoUrl={logoUrl} onFinishFight={handleFinishFight}
+          isPremium={isPremium} logoUrl={logoUrl} onFinishFight={handleFinishFight} user={user}
         />
       )}
     </>
