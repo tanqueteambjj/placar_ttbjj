@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, UserPlus, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, UserPlus, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User } from 'lucide-react';
 
 // === CONFIGURAÇÃO DO FIREBASE ===
 import { initializeApp } from "firebase/app";
@@ -11,7 +11,8 @@ import {
   createUserWithEmailAndPassword, 
   onAuthStateChanged,
   signOut,
-  updateProfile
+  updateProfile,
+  updatePassword
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -28,10 +29,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
+// === CONFIGURAÇÃO DE ADMINISTRADORES ===
+// Adiciona o teu email aqui para teres acesso Premium vitalício gratuito
+const ADMIN_EMAILS = [, 
+  "tanqueteambjj@gmail.com", // <-- O seu email de administrador adicionado aqui
+
+];
+
 // === CONFIGURAÇÃO MERCADO PAGO ===
-// AVISO DE SEGURANÇA: Em produção real, o Access Token NUNCA deve ficar no frontend (React). 
-// Ele deve ficar num servidor (Node.js/PHP) para evitar que utilizadores mal-intencionados o copiem.
-// Como estamos num ambiente de testes/demonstração, vamos chamá-lo diretamente daqui.
 const MP_ACCESS_TOKEN = "APP_USR-1453261259159538-031413-5e6302200ef4532780a4d37d4f0975c3-3264813133";
 const MP_PUBLIC_KEY = "APP_USR-c839e8ad-f5b5-4e82-981a-a2c3237b4b5e";
 
@@ -207,7 +212,14 @@ const LoginScreen = ({ onLoginSuccess, onGuestLogin }) => {
 const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, fightHistory }) => {
   const [newFight, setNewFight] = useState({ category: '', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Estados do Perfil
+  const [profileName, setProfileName] = useState(user?.displayName || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [profileMessage, setProfileMessage] = useState({ text: '', type: '' });
 
   const handleAddFight = (e) => {
     e.preventDefault();
@@ -227,11 +239,49 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
     }
   };
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setProfileMessage({ text: '', type: '' });
+
+    try {
+      if (profileName !== user.displayName) {
+        await updateProfile(auth.currentUser, { displayName: profileName });
+      }
+
+      if (newPassword) {
+        if (newPassword !== confirmNewPassword) {
+          setProfileMessage({ text: 'As novas senhas não coincidem.', type: 'error' });
+          return;
+        }
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/;
+        if (!strongPasswordRegex.test(newPassword)) {
+          setProfileMessage({ text: 'A senha deve ter pelo menos 8 caracteres, maiúsculas, minúsculas e números.', type: 'error' });
+          return;
+        }
+        await updatePassword(auth.currentUser, newPassword);
+      }
+
+      setProfileMessage({ text: 'Perfil atualizado com sucesso!', type: 'success' });
+      setNewPassword('');
+      setConfirmNewPassword('');
+      
+      // Fecha o modal após 2 segundos
+      setTimeout(() => setShowProfileModal(false), 2000);
+
+    } catch (error) {
+      console.error(error);
+      if (error.code === 'auth/requires-recent-login') {
+        setProfileMessage({ text: 'Por motivos de segurança, precisa de fazer logout e entrar novamente para mudar a senha.', type: 'error' });
+      } else {
+        setProfileMessage({ text: 'Erro ao atualizar o perfil.', type: 'error' });
+      }
+    }
+  };
+
   // Integração Mercado Pago (Criação de Preferência via API)
   const handlePayment = async (planName, price) => {
     setIsProcessingPayment(true);
     try {
-      // Cria a preferência de pagamento no Mercado Pago
       const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
         method: 'POST',
         headers: {
@@ -239,15 +289,7 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          items: [
-            {
-              title: planName,
-              description: `Acesso Premium - ${planName}`,
-              quantity: 1,
-              currency_id: 'BRL',
-              unit_price: price
-            }
-          ],
+          items: [{ title: planName, description: `Acesso Premium - ${planName}`, quantity: 1, currency_id: 'BRL', unit_price: price }],
           back_urls: {
             success: window.location.origin + window.location.pathname + '?payment=success',
             failure: window.location.origin + window.location.pathname + '?payment=failure',
@@ -258,15 +300,9 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
       });
 
       const data = await response.json();
-      
-      if (data.init_point) {
-        // Redireciona para a página segura de pagamento do Mercado Pago
-        window.location.href = data.init_point; 
-      } else {
-        throw new Error("Não foi possível gerar o link de pagamento.");
-      }
+      if (data.init_point) window.location.href = data.init_point; 
+      else throw new Error("Não foi possível gerar o link de pagamento.");
     } catch (error) {
-      console.error("Erro ao gerar pagamento:", error);
       alert("Erro ao conectar com o Mercado Pago. Verifique as credenciais.");
       setIsProcessingPayment(false);
     }
@@ -275,6 +311,52 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-4 md:p-8 font-sans relative">
       
+      {/* MODAL DE PERFIL */}
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative shadow-2xl">
+            <button onClick={() => setShowProfileModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+            
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User size={32} className="text-white" />
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">O Meu Perfil</h2>
+              <p className="text-zinc-400 text-sm mt-1">{user?.email}</p>
+            </div>
+
+            {profileMessage.text && (
+              <div className={`p-3 rounded-lg text-sm mb-6 text-center font-bold ${profileMessage.type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-500' : 'bg-green-900/50 text-green-200 border border-green-500'}`}>
+                {profileMessage.text}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição</label>
+                <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none" placeholder="O seu nome ou academia" />
+              </div>
+              
+              <div className="pt-4 border-t border-zinc-800 mt-4">
+                <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4">Alterar Senha (Opcional)</h3>
+                <div className="space-y-4">
+                  <div>
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Nova Senha" />
+                  </div>
+                  <div>
+                    <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Confirmar Nova Senha" />
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-6">
+                Salvar Alterações
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL DE PAGAMENTO (MERCADO PAGO) */}
       {showPaymentModal && !isPremium && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -363,7 +445,16 @@ const QueueScreen = ({ queue, setQueue, onStartFight, onLogout, user, isPremium,
               Painel de Lutas
               {isPremium ? <Crown size={20} className="text-yellow-500" /> : <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded-full">GRATUITO</span>}
             </h1>
-            <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">{user?.displayName || user?.email || 'Convidado'}</p>
+            
+            {/* Botão de Perfil Editável */}
+            <button 
+              onClick={() => user?.email !== 'Conta Gratuita' && setShowProfileModal(true)} 
+              className={`flex items-center gap-2 text-zinc-500 text-sm font-bold uppercase tracking-widest mt-1 hover:text-white transition-colors ${user?.email === 'Conta Gratuita' ? 'cursor-default' : 'cursor-pointer'}`}
+              title="Editar Perfil"
+            >
+              <User size={14} />
+              {user?.displayName || user?.email || 'Convidado'}
+            </button>
           </div>
         </div>
         <button onClick={onLogout} className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-xl transition-all flex items-center gap-2 text-red-500 font-bold">
@@ -798,7 +889,7 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
       </div>
     </div>
   );
-};
+}
 
 // === COMPONENTE PRINCIPAL (Roteador e Estado Global) ===
 export default function App() {
@@ -821,7 +912,6 @@ export default function App() {
     if (paymentStatus === 'success') {
       setIsPremium(true);
       alert("Pagamento aprovado! Bem-vindo ao Modo Premium. Todas as funcionalidades foram desbloqueadas.");
-      // Limpa a URL para não voltar a ler o parâmetro caso atualize a página
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (paymentStatus === 'failure') {
       alert("Houve um problema com o pagamento. Tente novamente.");
@@ -832,6 +922,15 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      
+      // VERIFICAÇÃO DE ADMINISTRADOR:
+      if (currentUser && ADMIN_EMAILS.includes(currentUser.email)) {
+        setIsPremium(true); // Desbloqueia todas as funcionalidades gratuitamente
+      } else if (currentUser && !ADMIN_EMAILS.includes(currentUser.email)) {
+        // Se no futuro implementares gravação no Firestore, lês daqui se ele pagou
+        setIsPremium(false);
+      }
+
       if (currentUser && currentView === 'login') {
         setCurrentView('queue');
       }
@@ -843,6 +942,7 @@ export default function App() {
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
+    setIsPremium(false); // Reseta o status premium ao sair
     setCurrentView('login');
   };
 
