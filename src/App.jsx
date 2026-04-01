@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag } from 'lucide-react';
 
 // === CONFIGURAÇÃO DO FIREBASE ===
 import { initializeApp } from "firebase/app";
@@ -56,6 +56,20 @@ const getCategoryHeaderStyle = (belt) => {
     case 'SUBMISSION - NOGI': return 'bg-zinc-950 text-red-500 border-red-700 border-b-4';
     default: return 'bg-zinc-900 text-white border-zinc-800';
   }
+};
+
+// Função para determinar Vencedor
+const getWinner = (res) => {
+  if (!res) return 0;
+  if (res.f1.penalties >= 4) return 2; // DQ F1
+  if (res.f2.penalties >= 4) return 1; // DQ F2
+  if (res.f1.points > res.f2.points) return 1;
+  if (res.f2.points > res.f1.points) return 2;
+  if (res.f1.advantages > res.f2.advantages) return 1;
+  if (res.f2.advantages > res.f1.advantages) return 2;
+  if (res.f1.penalties < res.f2.penalties) return 1;
+  if (res.f2.penalties < res.f1.penalties) return 2;
+  return 0; // Empate
 };
 
 // === COMPONENTES DA INTERFACE ===
@@ -305,6 +319,7 @@ const LoginScreen = ({ onGuestLogin }) => {
         </div>
 
         <button onClick={handleGoogleLogin} className="w-full mt-6 bg-white hover:bg-gray-100 text-black font-black py-3 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95 uppercase tracking-widest">
+          <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
           Google
         </button>
 
@@ -322,11 +337,12 @@ const LoginScreen = ({ onGuestLogin }) => {
 };
 
 // 3. Tela de Gestão do Evento (Dashboard)
-const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl }) => {
-  const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'categories'
+const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [printMode, setPrintMode] = useState(null); 
+
+  const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
   // Modais de Criação
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -341,13 +357,46 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
   const [addingFightToCat, setAddingFightToCat] = useState(null);
   const [newFight, setNewFight] = useState({ category: '', belt: '', gender: '', phase: 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' });
 
-  // Cupons
+  // Cupons (Salvos no LocalStorage para persistência do Admin)
+  const defaultCoupons = { 'OSS20': 0.20, 'TANQUE50': 0.50, 'TESTE100': 0.99 };
+  const [coupons, setCoupons] = useState(() => {
+    const saved = localStorage.getItem('app_coupons');
+    return saved ? JSON.parse(saved) : defaultCoupons;
+  });
+
   const [couponCode, setCouponCode] = useState('');
   const [couponMessage, setCouponMessage] = useState({ text: '', type: '' });
-  const VALID_COUPONS = {
-    'OSS20': 0.20,
-    'TANQUE50': 0.50,
-    'TESTE100': 0.99
+  
+  // CRUD de Cupons (Apenas Admin)
+  const [newCouponCode, setNewCouponCode] = useState('');
+  const [newCouponDiscount, setNewCouponDiscount] = useState('');
+
+  useEffect(() => {
+    if (isAdmin) {
+      localStorage.setItem('app_coupons', JSON.stringify(coupons));
+    }
+  }, [coupons, isAdmin]);
+
+  const handleAddCoupon = (e) => {
+    e.preventDefault();
+    if(!newCouponCode || !newCouponDiscount) return;
+    const code = newCouponCode.toUpperCase().trim();
+    const discount = parseFloat(newCouponDiscount) / 100;
+    if(isNaN(discount) || discount <= 0 || discount > 1) return alert('Desconto inválido. Use um valor entre 1 e 100.');
+
+    setCoupons(prev => ({...prev, [code]: discount}));
+    setNewCouponCode('');
+    setNewCouponDiscount('');
+  };
+
+  const removeCoupon = (code) => {
+    if(window.confirm(`Remover o cupão ${code}?`)) {
+      setCoupons(prev => {
+        const updated = {...prev};
+        delete updated[code];
+        return updated;
+      });
+    }
   };
 
   // Perfil
@@ -494,7 +543,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
     setCouponMessage({ text: '', type: '' });
 
     if (couponCode.trim() !== '') {
-      const discount = VALID_COUPONS[couponCode.trim().toUpperCase()];
+      const discount = coupons[couponCode.trim().toUpperCase()];
       if (discount) {
         finalPrice = Number((price - (price * discount)).toFixed(2));
       } else {
@@ -564,21 +613,24 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                   </tr>
                 </thead>
                 <tbody>
-                  {fightHistory.map(record => (
-                    <tr key={record.id}>
-                      <td className="border border-zinc-300 p-2 font-mono text-xs">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                      <td className="border border-zinc-300 p-2 font-bold text-xs uppercase">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || '-'}</td>
-                      <td className="border border-zinc-300 p-2 text-right">
-                        <div className="font-bold uppercase text-xs">{record.f1.name}</div>
-                        <div className="text-[10px] text-zinc-500 uppercase">V:{record.f1.advantages} P:{record.f1.penalties}</div>
-                      </td>
-                      <td className="border border-zinc-300 p-2 text-center font-black text-lg bg-zinc-50">{record.f1.points} x {record.f2.points}</td>
-                      <td className="border border-zinc-300 p-2 text-left">
-                        <div className="font-bold uppercase text-xs">{record.f2.name}</div>
-                        <div className="text-[10px] text-zinc-500 uppercase">V:{record.f2.advantages} P:{record.f2.penalties}</div>
-                      </td>
-                    </tr>
-                  ))}
+                  {fightHistory.map(record => {
+                    const winner = getWinner(record);
+                    return (
+                      <tr key={record.id}>
+                        <td className="border border-zinc-300 p-2 font-mono text-xs">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td className="border border-zinc-300 p-2 font-bold text-xs uppercase">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || '-'}</td>
+                        <td className="border border-zinc-300 p-2 text-right">
+                          <div className={`font-bold uppercase text-xs ${winner === 1 ? 'underline' : ''}`}>{record.f1.name}</div>
+                          <div className="text-[10px] text-zinc-500 uppercase">V:{record.f1.advantages} P:{record.f1.penalties}</div>
+                        </td>
+                        <td className="border border-zinc-300 p-2 text-center font-black text-lg bg-zinc-50">{record.f1.points} x {record.f2.points}</td>
+                        <td className="border border-zinc-300 p-2 text-left">
+                          <div className={`font-bold uppercase text-xs ${winner === 2 ? 'underline' : ''}`}>{record.f2.name}</div>
+                          <div className="text-[10px] text-zinc-500 uppercase">V:{record.f2.advantages} P:{record.f2.penalties}</div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -795,7 +847,45 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
           <nav className="flex gap-6 mb-8 border-b border-zinc-800">
             <button onClick={() => setActiveTab('queue')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'queue' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Fila de Lutas Geral</button>
             <button onClick={() => setActiveTab('categories')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'categories' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Categorias e Chaves</button>
+            {isAdmin && <button onClick={() => setActiveTab('admin')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'admin' ? 'text-purple-500 border-b-2 border-purple-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Administração</button>}
           </nav>
+
+          {/* TAB: ADMIN */}
+          {activeTab === 'admin' && isAdmin && (
+            <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden mt-4">
+              <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-purple-400">
+                <Tag size={24}/> Gestão de Cupões de Desconto (Admin)
+              </h2>
+              <form onSubmit={handleAddCoupon} className="flex flex-col md:flex-row gap-4 items-end bg-zinc-950 p-6 rounded-2xl border border-zinc-800">
+                 <div className="flex-1 w-full md:w-auto">
+                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Código do Cupão</label>
+                   <input type="text" value={newCouponCode} onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none uppercase text-sm" placeholder="EX: OSS20" required />
+                 </div>
+                 <div className="w-full md:w-32">
+                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Desconto (%)</label>
+                   <input type="number" min="1" max="100" value={newCouponDiscount} onChange={(e) => setNewCouponDiscount(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none text-sm" placeholder="EX: 20" required />
+                 </div>
+                 <button type="submit" className="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white font-black py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest h-[46px]">
+                   Criar
+                 </button>
+              </form>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(coupons).map(([code, discount]) => (
+                  <div key={code} className="flex justify-between items-center bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                     <div>
+                       <span className="font-black text-white text-lg tracking-widest">{code}</span>
+                       <span className="ml-3 px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-bold">{(discount * 100).toFixed(0)}% OFF</span>
+                     </div>
+                     <button onClick={() => removeCoupon(code)} className="p-2 text-zinc-500 hover:text-red-500 transition-colors bg-zinc-900 rounded-lg"><Trash2 size={16}/></button>
+                  </div>
+                ))}
+                {Object.keys(coupons).length === 0 && (
+                   <div className="col-span-full text-center text-zinc-500 text-sm py-4">Nenhum cupão ativo no sistema.</div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* TAB: FILA DE LUTAS GERAL */}
           {activeTab === 'queue' && (
@@ -818,7 +908,9 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                   <div className="border-2 border-dashed border-zinc-800 rounded-3xl p-16 text-center text-zinc-500 font-medium">Nenhuma luta na fila geral.</div>
                 ) : (
                   <div className="space-y-4">
-                    {queue.map((fight, index) => (
+                    {queue.map((fight, index) => {
+                      const winner = fight.status === 'finished' ? getWinner(fight.result) : 0;
+                      return (
                       <div key={fight.id} className={`bg-zinc-900 border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 hover:border-zinc-700 shadow-lg'}`}>
                         <div className={`text-zinc-600 font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl shrink-0 ${fight.status === 'finished' ? 'bg-green-900/20 text-green-500' : 'bg-zinc-950'}`}>
                           {index + 1}
@@ -830,7 +922,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                             </span>
                           </div>
                           <div className="text-right pr-4 border-r border-zinc-800/50">
-                            <p className="font-black text-sm text-white uppercase truncate">{fight.f1Name}</p>
+                            <p className={`font-black text-sm uppercase truncate ${winner === 1 ? 'text-yellow-400' : 'text-white'}`}>{fight.f1Name}</p>
                             <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
                           </div>
                           <div className="text-center flex justify-center">
@@ -839,7 +931,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                              ) : <span className="font-black text-zinc-600 italic text-xs">VS</span>}
                           </div>
                           <div className="text-left pl-4 border-l border-zinc-800/50">
-                            <p className="font-black text-sm text-white uppercase truncate">{fight.f2Name}</p>
+                            <p className={`font-black text-sm uppercase truncate ${winner === 2 ? 'text-yellow-400' : 'text-white'}`}>{fight.f2Name}</p>
                             <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
                           </div>
                         </div>
@@ -854,7 +946,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                           </button>
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </div>
                 )}
               </div>
@@ -909,7 +1001,9 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                           <div className="text-center text-zinc-600 text-sm font-bold uppercase tracking-widest py-8">Chave Vazia</div>
                         ) : (
                           <div className="space-y-3">
-                            {cat.fights.map((fight, index) => (
+                            {cat.fights.map((fight, index) => {
+                              const winner = fight.status === 'finished' ? getWinner(fight.result) : 0;
+                              return (
                               <div key={fight.id} className={`border rounded-2xl p-3 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'}`}>
                                 <div className="hidden md:flex flex-col items-center justify-center px-4 border-r border-zinc-800/50 shrink-0">
                                   <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">{fight.phase}</span>
@@ -918,7 +1012,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                                 
                                 <div className="flex-1 w-full grid grid-cols-3 items-center gap-2">
                                   <div className="text-right pr-4 border-r border-zinc-800/50">
-                                    <p className="font-black text-sm text-white uppercase truncate">{fight.f1Name}</p>
+                                    <p className={`font-black text-sm uppercase truncate ${winner === 1 ? 'text-yellow-400' : 'text-white'}`}>{fight.f1Name}</p>
                                     <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f1Team}</p>
                                   </div>
                                   <div className="text-center flex justify-center">
@@ -927,7 +1021,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                                      ) : <span className="font-black text-zinc-600 italic text-xs">VS</span>}
                                   </div>
                                   <div className="text-left pl-4 border-l border-zinc-800/50">
-                                    <p className="font-black text-sm text-white uppercase truncate">{fight.f2Name}</p>
+                                    <p className={`font-black text-sm uppercase truncate ${winner === 2 ? 'text-yellow-400' : 'text-white'}`}>{fight.f2Name}</p>
                                     <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">{fight.f2Team}</p>
                                   </div>
                                 </div>
@@ -943,7 +1037,7 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
                                   </button>
                                 </div>
                               </div>
-                            ))}
+                            )})}
                           </div>
                         )}
                       </div>
@@ -954,42 +1048,46 @@ const DashboardScreen = ({ queue, setQueue, categories, setCategories, fightHist
             </div>
           )}
 
-          {/* Secção Histórico Geral visível sempre em baixo */}
-          <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-300">
-                <History size={20}/> Histórico Completo
-                {!isPremium && <Lock size={16} className="text-yellow-500 ml-2" />}
-              </h2>
-              {fightHistory.length > 0 && isPremium && (
-                <button onClick={() => triggerPrintLocal('all')} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-800 px-4 py-2 rounded-xl flex items-center gap-2">
-                  <Printer size={14} /> Relatório Geral
-                </button>
+          {/* Secção Histórico Geral */}
+          {(activeTab === 'queue' || activeTab === 'categories') && (
+            <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-300">
+                  <History size={20}/> Histórico Completo
+                  {!isPremium && <Lock size={16} className="text-yellow-500 ml-2" />}
+                </h2>
+                {fightHistory.length > 0 && isPremium && (
+                  <button onClick={() => triggerPrintLocal('all')} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors border border-zinc-800 px-4 py-2 rounded-xl flex items-center gap-2">
+                    <Printer size={14} /> Relatório Geral
+                  </button>
+                )}
+              </div>
+              
+              {fightHistory.length === 0 ? (
+                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
+                  {!isPremium ? "O histórico requer plano Premium." : "Nenhum resultado processado ainda."}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {fightHistory.map(record => {
+                    const winner = getWinner(record);
+                    return (
+                    <div key={record.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 opacity-80 hover:opacity-100 transition-opacity">
+                      <div className="text-[10px] text-zinc-500 font-black tracking-widest uppercase mb-2 border-b border-zinc-800 pb-2 flex justify-between">
+                        <span className="truncate pr-2">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || 'LIVRE'}</span>
+                        <span className="shrink-0">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={`font-bold text-xs truncate w-24 uppercase ${winner === 1 ? 'text-yellow-400' : 'text-zinc-300'}`}>{record.f1.name}</span>
+                        <span className="font-black text-lg shrink-0">{record.f1.points} x {record.f2.points}</span>
+                        <span className={`font-bold text-xs truncate w-24 text-right uppercase ${winner === 2 ? 'text-yellow-400' : 'text-zinc-300'}`}>{record.f2.name}</span>
+                      </div>
+                    </div>
+                  )})}
+                </div>
               )}
             </div>
-            
-            {fightHistory.length === 0 ? (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
-                {!isPremium ? "O histórico requer plano Premium." : "Nenhum resultado processado ainda."}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {fightHistory.map(record => (
-                  <div key={record.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="text-[10px] text-zinc-500 font-black tracking-widest uppercase mb-2 border-b border-zinc-800 pb-2 flex justify-between">
-                      <span className="truncate pr-2">{[record.category, record.belt, record.gender].filter(Boolean).join(' • ') || 'LIVRE'}</span>
-                      <span className="shrink-0">{new Date(record.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-bold text-green-500 text-xs truncate w-24 uppercase">{record.f1.name}</span>
-                      <span className="font-black text-lg shrink-0">{record.f1.points} x {record.f2.points}</span>
-                      <span className="font-bold text-zinc-400 text-xs truncate w-24 text-right uppercase">{record.f2.name}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
         </main>
       </div>
     </div>
@@ -1123,18 +1221,11 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
                <img src={logoUrl} alt="Logo" className="h-20 md:h-24 w-auto object-contain mr-6 drop-shadow-lg" />
                <div className="flex flex-col gap-1 w-full">
                  <input type="text" placeholder="CATEGORIA / PESO" value={category} onChange={(e) => setCategory(e.target.value.toUpperCase())} className="text-2xl lg:text-3xl bg-transparent focus:outline-none border-b-2 border-transparent focus:border-blue-600 uppercase font-black w-full tracking-tighter leading-none" />
-                 <div className="flex items-center gap-2 mt-1">
-                    <select value={belt} onChange={e => setBelt(e.target.value)} className="bg-transparent text-sm text-zinc-500 focus:text-blue-500 uppercase font-bold outline-none cursor-pointer">
-                      <option value="">FAIXA...</option>
-                      {BELTS.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                    <span className="text-zinc-700">•</span>
-                    <select value={gender} onChange={e => setGender(e.target.value)} className="bg-transparent text-sm text-zinc-500 focus:text-blue-500 uppercase font-bold outline-none cursor-pointer">
-                      <option value="">SEXO...</option>
-                      <option value="MASCULINO">MASCULINO</option>
-                      <option value="FEMININO">FEMININO</option>
-                    </select>
-                 </div>
+                 {(belt || gender || phase) && (
+                   <div className="flex items-center gap-2 mt-1 text-zinc-500 font-bold text-xs tracking-widest uppercase">
+                      {[phase, belt, gender].filter(Boolean).join(' • ')}
+                   </div>
+                 )}
                </div>
             </div>
           </div>
@@ -1226,6 +1317,7 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
 export default function App() {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('login'); 
+  const [dashboardTab, setDashboardTab] = useState('queue'); // Estado global da aba para não resetar ao voltar
   const [isLoading, setIsLoading] = useState(true);
 
   const loadPremiumState = (uid) => {
@@ -1295,7 +1387,6 @@ export default function App() {
           setQueue([]);
         }
         
-        // Use functional state update to avoid missing dependencies
         setCurrentView(prev => prev === 'login' ? 'queue' : prev);
       } else {
         setCurrentView('login');
@@ -1344,7 +1435,6 @@ export default function App() {
     setTimeout(() => {
       if (action === 'next') {
         if (catId) {
-          // Check categories based on current state directly
           setCategories(currentCats => {
             const cat = currentCats.find(c => c.id === catId);
             if (cat) {
@@ -1382,6 +1472,7 @@ export default function App() {
       
       {currentView === 'queue' && (
         <DashboardScreen 
+          activeTab={dashboardTab} setActiveTab={setDashboardTab}
           user={user} queue={queue} setQueue={setQueue} categories={categories} setCategories={setCategories} 
           onStartFight={startFight} onLogout={handleLogout} 
           isPremium={isPremium} logoUrl={logoUrl} setLogoUrl={setLogoUrl} fightHistory={fightHistory}
