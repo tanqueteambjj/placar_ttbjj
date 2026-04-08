@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Mail } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Users, Package, Mail } from 'lucide-react';
 
 // === CONFIGURAÇÃO DO FIREBASE ===
 import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   onAuthStateChanged,
@@ -28,7 +26,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
 
 // === CONFIGURAÇÃO DE ADMINISTRADORES ===
 const ADMIN_EMAILS = [
@@ -37,7 +34,9 @@ const ADMIN_EMAILS = [
   "cledson@tanqueteambjj.com" 
 ];
 
-const MP_ACCESS_TOKEN = "APP_USR-1453261259159538-031413-5e6302200ef4532780a4d37d4f0975c3-3264813133";
+// === CREDENCIAIS MERCADO PAGO ===
+const MP_PUBLIC_KEY = "APP_USR-7a886f17-7cd4-4800-953e-000538747fc3";
+const MP_ACCESS_TOKEN = "APP_USR-5825120061754229-022016-ecb35610bbb69399336717aaf09d0539-89303803";
 
 // Constantes de Faixas e Fases
 const BELTS = ["BRANCA", "CINZA", "AMARELA", "LARANJA", "VERDE", "AZUL", "ROXA", "MARROM", "PRETA", "SUBMISSION - NOGI"];
@@ -250,27 +249,21 @@ const LoginScreen = ({ onGuestLogin }) => {
       } else if (isRegistering) {
         if (password !== confirmPassword) { setError("As senhas não coincidem."); setIsLoading(false); return; }
         if (!isPasswordValid) { setError("A senha não cumpre todos os requisitos."); setIsLoading(false); return; }
+        
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name.toUpperCase() });
+        
+        // Salva registro local para visualização do Admin
+        const existingUsers = JSON.parse(localStorage.getItem('app_registered_users') || '[]');
+        existingUsers.push({ uid: userCredential.user.uid, email, name: name.toUpperCase(), date: new Date().toISOString() });
+        localStorage.setItem('app_registered_users', JSON.stringify(existingUsers));
+
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
       setError(err.message.replace('Firebase:', ''));
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-    try { 
-      await signInWithPopup(auth, googleProvider); 
-    } catch (err) { 
-      console.error(err);
-      setError("Erro no Google Login."); 
       setIsLoading(false);
     }
   };
@@ -358,27 +351,14 @@ const LoginScreen = ({ onGuestLogin }) => {
         </form>
 
         {!isResettingPassword && (
-          <>
-            <div className="mt-8 flex items-center justify-between text-sm">
-              <span className="text-zinc-500 border-b border-zinc-800/50 w-1/4"></span>
-              <span className="text-zinc-600 uppercase tracking-widest text-[10px] font-black">Acesso Rápido</span>
-              <span className="text-zinc-500 border-b border-zinc-800/50 w-1/4"></span>
-            </div>
-
-            <button type="button" onClick={handleGoogleLogin} disabled={isLoading} className="w-full mt-6 bg-white hover:bg-gray-200 text-black font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 uppercase tracking-widest text-xs">
-              <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-              Continuar com Google
+          <div className="mt-8 flex flex-col gap-4">
+            <button onClick={() => { setIsRegistering(!isRegistering); setError(''); setSuccessMsg(''); }} disabled={isLoading} className="text-zinc-400 hover:text-blue-400 text-xs font-black uppercase tracking-widest transition-colors">
+              {isRegistering ? 'Já tenho conta. Fazer Login' : 'Não tem conta? Registre-se'}
             </button>
-
-            <div className="mt-8 flex flex-col gap-4">
-              <button onClick={() => { setIsRegistering(!isRegistering); setError(''); setSuccessMsg(''); }} disabled={isLoading} className="text-zinc-400 hover:text-blue-400 text-xs font-black uppercase tracking-widest transition-colors">
-                {isRegistering ? 'Já tenho conta. Fazer Login' : 'Não tem conta? Registre-se'}
-              </button>
-              <button onClick={onGuestLogin} disabled={isLoading} className="text-zinc-600 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-zinc-800/50 py-3 rounded-xl bg-zinc-950/30">
-                <LogIn size={12} /> Testar Modo Gratuito
-              </button>
-            </div>
-          </>
+            <button onClick={onGuestLogin} disabled={isLoading} className="text-zinc-600 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-zinc-800/50 py-3 rounded-xl bg-zinc-950/30">
+              <LogIn size={12} /> Testar Modo Gratuito
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -392,6 +372,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
   const [printMode, setPrintMode] = useState(null); 
 
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
+  const [adminSubTab, setAdminSubTab] = useState('plans'); // 'users' | 'plans' | 'coupons'
 
   // Modais de Criação
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -409,8 +390,24 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     category: '', belt: '', gender: '', phase: 'LUTA LIVRE', f1Name: '', f1Team: '', f2Name: '', f2Team: '' 
   });
 
-  // Cupons
-  const defaultCoupons = { 'OSS20': 0.20, 'TANQUE50': 0.50, 'TESTE100': 0.99 };
+  // Admin: Planos
+  const defaultPlans = [
+    { id: 1, name: 'Passe Torneio', durationDays: 3, price: 15, isPopular: false, features: 'Ideal para Campeonatos de Fim de Semana,Todas as funções desbloqueadas,Sem renovação automática' },
+    { id: 2, name: 'Plano Mensal', durationDays: 30, price: 30, isPopular: true, features: 'Perfeito para Academias e Treinos Diários,Histórico ilimitado guardado no sistema,Sua própria Logo no Placar e PDFs' }
+  ];
+  const [plans, setPlans] = useState(() => {
+    const saved = localStorage.getItem('app_plans');
+    return saved ? JSON.parse(saved) : defaultPlans;
+  });
+
+  const [newPlan, setNewPlan] = useState({ name: '', durationDays: 30, price: 0, isPopular: false, features: '' });
+
+  // Admin: Cupons
+  const defaultCoupons = { 
+    'OSS20': { discount: 0.20, uses: 100 }, 
+    'TANQUE50': { discount: 0.50, uses: 50 }, 
+    'TESTE100': { discount: 0.99, uses: 10 } 
+  };
   const [coupons, setCoupons] = useState(() => {
     const saved = localStorage.getItem('app_coupons');
     return saved ? JSON.parse(saved) : defaultCoupons;
@@ -418,27 +415,60 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 
   const [couponCode, setCouponCode] = useState('');
   const [couponMessage, setCouponMessage] = useState({ text: '', type: '' });
+  
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponDiscount, setNewCouponDiscount] = useState('');
+  const [newCouponUses, setNewCouponUses] = useState('');
+
+  // Admin: Usuários
+  const [registeredUsers, setRegisteredUsers] = useState([]);
 
   useEffect(() => {
-    if (isAdmin) localStorage.setItem('app_coupons', JSON.stringify(coupons));
-  }, [coupons, isAdmin]);
+    if (isAdmin) {
+      localStorage.setItem('app_coupons', JSON.stringify(coupons));
+      localStorage.setItem('app_plans', JSON.stringify(plans));
+      setRegisteredUsers(JSON.parse(localStorage.getItem('app_registered_users') || '[]'));
+    }
+  }, [coupons, plans, isAdmin]);
 
+  // Funções Admin
   const handleAddCoupon = (e) => {
     e.preventDefault();
-    if(!newCouponCode || !newCouponDiscount) return;
+    if(!newCouponCode || !newCouponDiscount || !newCouponUses) return;
     const code = newCouponCode.toUpperCase().trim();
     const discount = parseFloat(newCouponDiscount) / 100;
+    const uses = parseInt(newCouponUses, 10);
+    
     if(isNaN(discount) || discount <= 0 || discount > 1) return alert('Desconto inválido. Use um valor entre 1 e 100.');
+    if(isNaN(uses) || uses <= 0) return alert('Quantidade de usos inválida.');
 
-    setCoupons(prev => ({...prev, [code]: discount}));
-    setNewCouponCode('');
-    setNewCouponDiscount('');
+    setCoupons(prev => ({...prev, [code]: { discount, uses }}));
+    setNewCouponCode(''); setNewCouponDiscount(''); setNewCouponUses('');
+  };
+  
+  const removeCoupon = (code) => { 
+    if(window.confirm(`Remover o cupom ${code}?`)) {
+      setCoupons(prev => { const updated = {...prev}; delete updated[code]; return updated; }); 
+    }
   };
 
-  const removeCoupon = (code) => {
-    if(window.confirm(`Remover o cupão ${code}?`)) setCoupons(prev => { const updated = {...prev}; delete updated[code]; return updated; });
+  const handleAddPlan = (e) => {
+    e.preventDefault();
+    if(!newPlan.name || newPlan.price <= 0) return;
+    setPlans(prev => [...prev, { ...newPlan, id: Date.now() }]);
+    setNewPlan({ name: '', durationDays: 30, price: 0, isPopular: false, features: '' });
+  };
+  
+  const removePlan = (id) => { 
+    if(window.confirm('Remover este plano?')) setPlans(plans.filter(p => p.id !== id)); 
+  };
+
+  const removeUserLocal = (uid) => {
+    if(window.confirm('Isto removerá o registo apenas desta lista local (Não apaga a conta real no Firebase). Prosseguir?')) {
+      const updated = registeredUsers.filter(u => u.uid !== uid);
+      setRegisteredUsers(updated);
+      localStorage.setItem('app_registered_users', JSON.stringify(updated));
+    }
   };
 
   // Perfil
@@ -513,15 +543,11 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
       f2Name: newFight.f2Name.toUpperCase(), f2Team: newFight.f2Team.toUpperCase()
     };
 
-    // Validar limite de 100 lutas por dia (apenas ao adicionar uma nova luta)
     if (!editingFight) {
       const selectedDate = newFight.date;
       const fightsTodayQueue = queue.filter(f => f.date === selectedDate).length;
       const fightsTodayCats = categories.reduce((sum, cat) => sum + cat.fights.filter(f => f.date === selectedDate).length, 0);
-      
-      if (fightsTodayQueue + fightsTodayCats >= 100) {
-        return alert("Limite de 100 lutas alcançado para a data selecionada.");
-      }
+      if (fightsTodayQueue + fightsTodayCats >= 100) return alert("Limite de 100 lutas alcançado para a data selecionada.");
     }
 
     if (editingFight) {
@@ -550,11 +576,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 
   const handleStartFightInternal = (fight, category) => {
     onStartFight({
-      ...fight,
-      catId: category.id,
-      category: category.name,
-      belt: category.belt,
-      gender: category.gender
+      ...fight, catId: category.id, category: category.name, belt: category.belt, gender: category.gender
     });
   };
 
@@ -600,9 +622,14 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     setCouponMessage({ text: '', type: '' });
 
     if (couponCode.trim() !== '') {
-      const discount = coupons[couponCode.trim().toUpperCase()];
-      if (discount) {
-        finalPrice = Number((price - (price * discount)).toFixed(2));
+      const code = couponCode.trim().toUpperCase();
+      const couponData = coupons[code];
+      
+      if (couponData && couponData.uses > 0) {
+        finalPrice = Number((price - (price * couponData.discount)).toFixed(2));
+      } else if (couponData && couponData.uses <= 0) {
+        setCouponMessage({ text: 'Este cupom já atingiu o limite de usos.', type: 'error' });
+        return;
       } else {
         setCouponMessage({ text: 'Cupom inválido ou expirado.', type: 'error' });
         return;
@@ -610,6 +637,19 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
 
     setIsProcessingPayment(true);
+
+    if (finalPrice <= 0) {
+        alert("Cupom de 100% aplicado! Bem-vindo ao Modo Premium.");
+        if (couponCode.trim() !== '') {
+          const code = couponCode.trim().toUpperCase();
+          const updatedCoupons = { ...coupons, [code]: { ...coupons[code], uses: coupons[code].uses - 1 } };
+          setCoupons(updatedCoupons);
+          localStorage.setItem('app_coupons', JSON.stringify(updatedCoupons));
+        }
+        window.location.href = window.location.origin + window.location.pathname + '?payment=success';
+        return;
+    }
+
     try {
       const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
         method: 'POST',
@@ -630,8 +670,18 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
           auto_return: 'approved'
         })
       });
+      
       const data = await response.json();
-      if (data.init_point) window.location.href = data.init_point; 
+      
+      if (data.init_point) {
+        if (couponCode.trim() !== '') {
+          const code = couponCode.trim().toUpperCase();
+          const updatedCoupons = { ...coupons, [code]: { ...coupons[code], uses: coupons[code].uses - 1 } };
+          setCoupons(updatedCoupons);
+          localStorage.setItem('app_coupons', JSON.stringify(updatedCoupons));
+        }
+        window.location.href = data.init_point; 
+      }
       else throw new Error("Falha no link.");
     } catch (error) {
       alert("Erro ao conectar com o Mercado Pago.");
@@ -639,7 +689,6 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
   };
 
-  // Método para Renderizar a Lista de Lutas Agrupada por Datas
   const renderFightList = (fightsList, catId = null) => {
     const grouped = fightsList.reduce((acc, f) => {
       const d = f.date || new Date(f.id).toISOString().split('T')[0];
@@ -762,7 +811,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
       {/* MODAIS APLICAÇÃO */}
       <div className="print:hidden">
         
-        {/* Modal Perfil (Minha Conta) */}
+        {/* Modal Perfil */}
         {showProfileModal && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
             <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative shadow-2xl">
@@ -800,7 +849,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         {/* Modal Pagamento */}
         {showPaymentModal && !isPremium && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm overflow-y-auto">
-            <div className="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative my-8">
+            <div className="max-w-6xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative my-8">
               <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
               <div className="text-center mb-8">
                 <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
@@ -812,7 +861,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
               <div className="max-w-sm mx-auto mb-10">
                 <input
                   type="text"
-                  placeholder="TEM UM CUPÃO DE DESCONTO?"
+                  placeholder="TEM UM CUPOM DE DESCONTO?"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-center font-bold tracking-widest text-sm transition-colors focus:bg-zinc-900"
@@ -824,38 +873,25 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                 )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-zinc-950 border-2 border-zinc-800 hover:border-blue-500 transition-all rounded-2xl p-6 relative flex flex-col">
-                  <div className="flex justify-between items-start mb-4">
-                    <div><h3 className="text-2xl font-black uppercase text-blue-400">Passe Torneio</h3><p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 3 Dias</p></div>
-                    <Zap size={32} className="text-blue-500" />
+              <div className={`grid md:grid-cols-${Math.min(plans.length, 3)} gap-8`}>
+                {plans.map(plan => (
+                  <div key={plan.id} className={`bg-zinc-950 border-2 ${plan.isPopular ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-blue-500'} transition-all rounded-2xl p-6 relative flex flex-col`}>
+                    {plan.isPopular && <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">Mais Popular</div>}
+                    <div className="flex justify-between items-start mb-4 mt-2">
+                      <div><h3 className={`text-2xl font-black uppercase ${plan.isPopular ? 'text-yellow-500' : 'text-blue-400'}`}>{plan.name}</h3><p className="text-zinc-500 font-bold text-sm uppercase">Acesso por {plan.durationDays} Dias</p></div>
+                      {plan.isPopular ? <Calendar size={32} className="text-yellow-500" /> : <Zap size={32} className="text-blue-500" />}
+                    </div>
+                    <div className="text-5xl font-black mb-6">R$ {plan.price}<span className="text-xl text-zinc-500">,00</span></div>
+                    <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
+                      {plan.features.split(',').map((feature, i) => (
+                        <li key={i} className="flex items-start gap-2"><div className={`w-1.5 h-1.5 mt-1.5 rounded-full shrink-0 ${plan.isPopular ? 'bg-yellow-500' : 'bg-blue-500'}`}></div> {feature.trim()}</li>
+                      ))}
+                    </ul>
+                    <button onClick={() => handlePayment(plan.name, plan.price)} disabled={isProcessingPayment} className={`w-full mt-auto font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 ${plan.isPopular ? 'bg-yellow-500 hover:bg-yellow-400 text-black disabled:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-500 text-white disabled:bg-blue-800'}`}>
+                      {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
+                    </button>
                   </div>
-                  <div className="text-5xl font-black mb-6">R$ 15<span className="text-xl text-zinc-500">,00</span></div>
-                  <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Ideal para Campeonatos de Fim de Semana</li>
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Todas as funções desbloqueadas</li>
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Sem renovação automática</li>
-                  </ul>
-                  <button onClick={() => handlePayment("Plano Campeonato (3 Dias)", 15)} disabled={isProcessingPayment} className="w-full mt-auto bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
-                    {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
-                  </button>
-                </div>
-                <div className="bg-zinc-950 border-2 border-yellow-500 rounded-2xl p-6 relative flex flex-col shadow-[0_0_30px_rgba(234,179,8,0.15)]">
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">Mais Popular</div>
-                  <div className="flex justify-between items-start mb-4 mt-2">
-                    <div><h3 className="text-2xl font-black uppercase text-yellow-500">Plano Mensal</h3><p className="text-zinc-500 font-bold text-sm uppercase">Acesso por 30 Dias</p></div>
-                    <Calendar size={32} className="text-yellow-500" />
-                  </div>
-                  <div className="text-5xl font-black mb-6">R$ 30<span className="text-xl text-zinc-500">,00</span></div>
-                  <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Perfeito para Academias e Treinos Diários</li>
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Histórico ilimitado guardado no sistema</li>
-                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Sua própria Logo no Placar e PDFs</li>
-                  </ul>
-                  <button onClick={() => handlePayment("Plano Mensal (30 Dias)", 30)} disabled={isProcessingPayment} className="w-full mt-auto bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-700 text-black font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
-                    {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
-                  </button>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -972,46 +1008,144 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         {/* MAIN CONTENT DO DASHBOARD */}
         <main className="max-w-6xl mx-auto pb-20">
           
-          <nav className="flex gap-6 mb-8 border-b border-zinc-800">
-            <button onClick={() => setActiveTab('queue')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'queue' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Fila de Lutas Geral</button>
+          <nav className="flex flex-wrap gap-4 md:gap-6 mb-8 border-b border-zinc-800">
+            <button onClick={() => setActiveTab('queue')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'queue' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Fila Livre</button>
             <button onClick={() => setActiveTab('categories')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'categories' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Categorias e Chaves</button>
             {isAdmin && <button onClick={() => setActiveTab('admin')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'admin' ? 'text-purple-500 border-b-2 border-purple-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Administração</button>}
           </nav>
 
           {/* TAB: ADMIN */}
           {activeTab === 'admin' && isAdmin && (
-            <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden mt-4">
-              <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-purple-400">
-                <Tag size={24}/> Gestão de Cupões de Desconto (Admin)
-              </h2>
-              <form onSubmit={handleAddCoupon} className="flex flex-col md:flex-row gap-4 items-end bg-zinc-950 p-6 rounded-2xl border border-zinc-800">
-                 <div className="flex-1 w-full md:w-auto">
-                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Código do Cupão</label>
-                   <input type="text" value={newCouponCode} onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none uppercase text-sm" placeholder="EX: OSS20" required />
-                 </div>
-                 <div className="w-full md:w-32">
-                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Desconto (%)</label>
-                   <input type="number" min="1" max="100" value={newCouponDiscount} onChange={(e) => setNewCouponDiscount(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none text-sm" placeholder="EX: 20" required />
-                 </div>
-                 <button type="submit" className="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white font-black py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest h-[46px]">
-                   Criar
-                 </button>
-              </form>
-
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(coupons).map(([code, discount]) => (
-                  <div key={code} className="flex justify-between items-center bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                     <div>
-                       <span className="font-black text-white text-lg tracking-widest">{code}</span>
-                       <span className="ml-3 px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-bold">{(discount * 100).toFixed(0)}% OFF</span>
-                     </div>
-                     <button onClick={() => removeCoupon(code)} className="p-2 text-zinc-500 hover:text-red-500 transition-colors bg-zinc-900 rounded-lg"><Trash2 size={16}/></button>
-                  </div>
-                ))}
-                {Object.keys(coupons).length === 0 && (
-                   <div className="col-span-full text-center text-zinc-500 text-sm py-4">Nenhum cupão ativo no sistema.</div>
-                )}
+            <div className="space-y-6">
+              {/* SubNavegação Admin */}
+              <div className="flex gap-4 border-b border-zinc-800/50 mb-6">
+                 <button onClick={() => setAdminSubTab('plans')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'plans' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Planos Premium</button>
+                 <button onClick={() => setAdminSubTab('users')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'users' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Usuários Registados</button>
+                 <button onClick={() => setAdminSubTab('coupons')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'coupons' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Cupons</button>
               </div>
+
+              {adminSubTab === 'plans' && (
+                <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden">
+                  <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-purple-400"><Package size={24}/> Gerir Planos de Subscrição</h2>
+                  <form onSubmit={handleAddPlan} className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 space-y-4">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div>
+                         <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome do Plano</label>
+                         <input type="text" value={newPlan.name} onChange={e => setNewPlan({...newPlan, name: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 text-sm" placeholder="Ex: Passe Fim de Semana" required />
+                       </div>
+                       <div>
+                         <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Duração (Dias)</label>
+                         <input type="number" min="1" value={newPlan.durationDays} onChange={e => setNewPlan({...newPlan, durationDays: Number(e.target.value)})} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 text-sm" required />
+                       </div>
+                       <div>
+                         <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Preço (R$)</label>
+                         <input type="number" min="1" value={newPlan.price} onChange={e => setNewPlan({...newPlan, price: Number(e.target.value)})} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 text-sm" required />
+                       </div>
+                     </div>
+                     <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Funcionalidades (Separadas por vírgula)</label>
+                        <input type="text" value={newPlan.features} onChange={e => setNewPlan({...newPlan, features: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 text-sm" placeholder="Ex: Acesso total, Suporte prioritário" required />
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <input type="checkbox" id="isPopular" checked={newPlan.isPopular} onChange={e => setNewPlan({...newPlan, isPopular: e.target.checked})} className="w-4 h-4 accent-purple-600 cursor-pointer" />
+                        <label htmlFor="isPopular" className="text-sm font-bold text-zinc-400 cursor-pointer">Destacar como "Mais Popular"</label>
+                     </div>
+                     <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-black py-3 px-8 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-2">Adicionar Plano</button>
+                  </form>
+
+                  <div className="mt-8 space-y-4">
+                    {plans.map(plan => (
+                      <div key={plan.id} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-950 p-4 rounded-xl border border-zinc-800 gap-4">
+                         <div>
+                           <div className="flex items-center gap-3">
+                              <span className="font-black text-white text-lg tracking-widest uppercase">{plan.name}</span>
+                              {plan.isPopular && <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 rounded text-[10px] font-black uppercase">Popular</span>}
+                           </div>
+                           <p className="text-xs text-zinc-500 mt-1">{plan.durationDays} Dias • R$ {plan.price},00</p>
+                         </div>
+                         <button onClick={() => removePlan(plan.id)} className="p-3 text-zinc-500 hover:text-red-500 transition-colors bg-zinc-900 rounded-lg"><Trash2 size={16}/></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {adminSubTab === 'users' && (
+                <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden">
+                  <h2 className="text-xl font-black uppercase tracking-tighter mb-2 flex items-center gap-2 text-purple-400"><Users size={24}/> Registos Locais</h2>
+                  <p className="text-xs text-zinc-500 mb-6">Esta lista mostra as contas que se registaram através deste dispositivo. O banco de dados de contas completo encontra-se no Firebase Console.</p>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-zinc-800">
+                          <th className="p-3 font-black uppercase text-zinc-500">Data</th>
+                          <th className="p-3 font-black uppercase text-zinc-500">Nome (Academia)</th>
+                          <th className="p-3 font-black uppercase text-zinc-500">Email</th>
+                          <th className="p-3 font-black uppercase text-zinc-500 text-right">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {registeredUsers.length === 0 ? (
+                          <tr><td colSpan="4" className="text-center p-6 text-zinc-600 font-bold uppercase">Nenhum registo local encontrado.</td></tr>
+                        ) : (
+                          registeredUsers.map(u => (
+                            <tr key={u.uid} className="border-b border-zinc-800/50 hover:bg-zinc-950/50">
+                              <td className="p-3 font-mono text-xs text-zinc-400">{new Date(u.date).toLocaleDateString()}</td>
+                              <td className="p-3 font-bold uppercase">{u.name}</td>
+                              <td className="p-3 text-zinc-400">{u.email}</td>
+                              <td className="p-3 text-right">
+                                <button onClick={() => removeUserLocal(u.uid)} className="text-zinc-600 hover:text-red-500 transition-colors" title="Remover da vista local"><X size={16}/></button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {adminSubTab === 'coupons' && (
+                <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden">
+                  <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-purple-400"><Tag size={24}/> Gestão de Cupons de Desconto (Admin)</h2>
+                  <form onSubmit={handleAddCoupon} className="flex flex-col md:flex-row gap-4 items-end bg-zinc-950 p-6 rounded-2xl border border-zinc-800">
+                     <div className="flex-1 w-full md:w-auto">
+                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Código do Cupom</label>
+                       <input type="text" value={newCouponCode} onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none uppercase text-sm" placeholder="EX: OSS20" required />
+                     </div>
+                     <div className="w-full md:w-24">
+                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Desconto (%)</label>
+                       <input type="number" min="1" max="100" value={newCouponDiscount} onChange={(e) => setNewCouponDiscount(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none text-sm" placeholder="EX: 20" required />
+                     </div>
+                     <div className="w-full md:w-24">
+                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Usos Limite</label>
+                       <input type="number" min="1" value={newCouponUses} onChange={(e) => setNewCouponUses(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none text-sm" placeholder="EX: 10" required />
+                     </div>
+                     <button type="submit" className="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white font-black py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest h-[46px]">
+                       Criar
+                     </button>
+                  </form>
+
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(coupons).map(([code, data]) => (
+                      <div key={code} className="flex justify-between items-center bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                         <div>
+                           <span className="font-black text-white text-lg tracking-widest">{code}</span>
+                           <div className="flex gap-2 mt-1">
+                             <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-bold">{(data.discount * 100).toFixed(0)}% OFF</span>
+                             <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">Restam: {data.uses}</span>
+                           </div>
+                         </div>
+                         <button onClick={() => removeCoupon(code)} className="p-2 text-zinc-500 hover:text-red-500 transition-colors bg-zinc-900 rounded-lg"><Trash2 size={16}/></button>
+                      </div>
+                    ))}
+                    {Object.keys(coupons).length === 0 && (
+                       <div className="col-span-full text-center text-zinc-500 text-sm py-4">Nenhum cupom ativo no sistema.</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1368,7 +1502,6 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false); 
   const [logoUrl, setLogoUrl] = useState("https://iili.io/qC543c7.png"); 
   
-  // Clean Data older than 5 Days
   const cleanOldData = (dataArray) => {
     const fiveDaysAgo = Date.now() - (5 * 24 * 60 * 60 * 1000);
     return dataArray.filter(item => item.id > fiveDaysAgo);
