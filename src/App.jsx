@@ -11,7 +11,8 @@ import {
   signOut,
   updateProfile,
   updatePassword,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  confirmPasswordReset
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -212,6 +213,92 @@ const FighterCard = ({ num, data, setFighter, updateScore, isGreenBelt, isDarkMo
             <button onClick={() => updateScore('penalties', 1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Plus size={28} /></button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ResetPasswordScreen = ({ oobCode }) => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const passReqs = {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password)
+  };
+  const isPasswordValid = passReqs.length && passReqs.upper && passReqs.lower && passReqs.number;
+
+  const handleReset = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (password !== confirmPassword) { setError("As senhas não coincidem."); return; }
+    if (!isPasswordValid) { setError("A senha não cumpre todos os requisitos."); return; }
+
+    setIsLoading(true);
+    try {
+      await confirmPasswordReset(auth, oobCode, password);
+      setSuccessMsg('Senha redefinida com sucesso! A redirecionar para o login...');
+      setTimeout(() => {
+         window.location.href = window.location.origin + window.location.pathname;
+      }, 3000);
+    } catch (err) {
+      if (err.code === 'auth/invalid-action-code') {
+        setError('Este link expirou ou já foi usado. Por favor, solicite um novo na página de login.');
+      } else {
+        setError(err.message.replace('Firebase:', ''));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black p-4 relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+      <div className="max-w-md w-full bg-zinc-900/80 backdrop-blur-2xl border border-zinc-800/50 rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(0,0,0,0.3)] relative z-10">
+        <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-2 text-center">Nova Senha</h2>
+        <p className="text-zinc-400 text-sm text-center mb-6">Crie uma nova senha para a sua conta.</p>
+
+        {error && <div className="bg-red-950/50 border border-red-900/50 text-red-400 p-4 rounded-2xl text-xs font-bold tracking-widest uppercase mb-6 text-center shadow-inner flex items-center justify-center gap-2"><X size={14}/> {error}</div>}
+        {successMsg && <div className="bg-green-950/50 border border-green-900/50 text-green-400 p-4 rounded-2xl text-xs font-bold tracking-widest uppercase mb-6 text-center shadow-inner flex items-center justify-center gap-2"><CheckCircle size={14}/> {successMsg}</div>}
+
+        <form onSubmit={handleReset} className="space-y-4">
+          <div className="relative group">
+            <Lock className="absolute left-4 top-4 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-blue-500 focus:bg-zinc-900 transition-all text-sm font-medium placeholder:text-zinc-600" placeholder="NOVA SENHA" />
+
+            <div className="mt-2 p-4 bg-zinc-950/50 rounded-2xl border border-zinc-800/50 space-y-2">
+              <div className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${passReqs.length ? 'text-green-500' : 'text-zinc-500'}`}>
+                {passReqs.length ? <CheckCircle size={12} /> : <div className="w-3 h-3 border-2 border-zinc-700 rounded-full" />} Mínimo 8 caracteres
+              </div>
+              <div className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${passReqs.upper ? 'text-green-500' : 'text-zinc-500'}`}>
+                {passReqs.upper ? <CheckCircle size={12} /> : <div className="w-3 h-3 border-2 border-zinc-700 rounded-full" />} 1 Letra Maiúscula
+              </div>
+              <div className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${passReqs.lower ? 'text-green-500' : 'text-zinc-500'}`}>
+                {passReqs.lower ? <CheckCircle size={12} /> : <div className="w-3 h-3 border-2 border-zinc-700 rounded-full" />} 1 Letra Minúscula
+              </div>
+              <div className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${passReqs.number ? 'text-green-500' : 'text-zinc-500'}`}>
+                {passReqs.number ? <CheckCircle size={12} /> : <div className="w-3 h-3 border-2 border-zinc-700 rounded-full" />} 1 Número
+              </div>
+            </div>
+          </div>
+
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-blue-500 focus:bg-zinc-900 transition-all text-sm font-medium placeholder:text-zinc-600" placeholder="CONFIRMAR NOVA SENHA" />
+          </div>
+
+          <button type="submit" disabled={isLoading || !isPasswordValid} className={`w-full font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-6 flex justify-center items-center gap-2 ${isLoading || !isPasswordValid ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-400 text-white shadow-blue-900/20'}`}>
+            {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Redefinir Senha'}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -694,7 +781,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
 
     setIsProcessingPayment(true);
-    sessionStorage.setItem('pendingPlanDays', durationDays); // Armazenar dinamicamente os dias do plano
+    sessionStorage.setItem('pendingPlanDays', durationDays); 
     
     if (couponCode.trim() !== '') {
       sessionStorage.setItem('pendingUsedCoupon', couponCode.trim().toUpperCase());
@@ -1433,11 +1520,232 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
   );
 };
 
+const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl, onFinishFight, user }) => {
+  const [matchTime, setMatchTime] = useState(300);
+  const [timeLeft, setTimeLeft] = useState(matchTime);
+  const [isRunning, setIsRunning] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  const [category, setCategory] = useState(initialFightData?.category || '');
+  const [belt, setBelt] = useState(initialFightData?.belt || '');
+  const [gender, setGender] = useState(initialFightData?.gender || '');
+  const [phase, setPhase] = useState(initialFightData?.phase || '');
+
+  const initialFighter1 = { name: initialFightData?.f1Name || '', team: initialFightData?.f1Team || '', points: 0, advantages: 0, penalties: 0 };
+  const initialFighter2 = { name: initialFightData?.f2Name || '', team: initialFightData?.f2Team || '', points: 0, advantages: 0, penalties: 0 };
+  
+  const [fighter1, setFighter1] = useState(initialFighter1);
+  const [fighter2, setFighter2] = useState(initialFighter2);
+
+  useEffect(() => {
+    if(initialFightData) {
+      setCategory(initialFightData.category || '');
+      setBelt(initialFightData.belt || '');
+      setGender(initialFightData.gender || '');
+      setPhase(initialFightData.phase || '');
+      setFighter1({ ...initialFighter1, name: initialFightData.f1Name, team: initialFightData.f1Team });
+      setFighter2({ ...initialFighter2, name: initialFightData.f2Name, team: initialFightData.f2Team });
+      
+      if(initialFightData.result) {
+         setFighter1({ ...initialFighter1, name: initialFightData.f1Name, team: initialFightData.f1Team, ...initialFightData.result.f1 });
+         setFighter2({ ...initialFighter2, name: initialFightData.f2Name, team: initialFightData.f2Team, ...initialFightData.result.f2 });
+         setTimeLeft(0);
+      } else {
+         setTimeLeft(matchTime);
+      }
+      setIsRunning(false);
+    }
+  }, [initialFightData]);
+
+  const updateFighterScore = useCallback((fighterNum, type, value) => {
+    const isF1 = fighterNum === 1;
+    const setFighter = isF1 ? setFighter1 : setFighter2;
+    const setOpponent = isF1 ? setFighter2 : setFighter1;
+
+    setFighter(prev => {
+      const newValue = Math.max(0, prev[type] + value);
+      
+      if (type === 'penalties') {
+        if (value > 0) {
+          if (newValue === 2) setOpponent(opp => ({ ...opp, advantages: opp.advantages + 1 }));
+          else if (newValue === 3) setOpponent(opp => ({ ...opp, points: opp.points + 2 }));
+        } else if (value < 0) {
+          if (prev.penalties === 2) setOpponent(opp => ({ ...opp, advantages: Math.max(0, opp.advantages - 1) }));
+          else if (prev.penalties === 3) setOpponent(opp => ({ ...opp, points: Math.max(0, opp.points - 2) }));
+        }
+      }
+      return { ...prev, [type]: newValue };
+    });
+  }, []);
+
+  useEffect(() => {
+    let interval = null;
+    if (isRunning && timeLeft > 0) {
+      interval = setInterval(() => setTimeLeft((time) => time - 1), 1000);
+    } else if (timeLeft === 0) {
+      setIsRunning(false);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, timeLeft]);
+
+  const toggleTimer = () => setIsRunning(!isRunning);
+
+  const handleCompleteFight = (action) => {
+    const scoreData = { category, belt, gender, phase, duration: matchTime / 60, f1: { ...fighter1 }, f2: { ...fighter2 } };
+    onFinishFight(initialFightData?.catId, initialFightData?.id, scoreData, action);
+    setShowFinishModal(false);
+  };
+
+  const executeLocalReset = () => {
+    setIsRunning(false);
+    setTimeLeft(matchTime);
+    setFighter1({ ...fighter1, points: 0, advantages: 0, penalties: 0 });
+    setFighter2({ ...fighter2, points: 0, advantages: 0, penalties: 0 });
+  };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const themeClasses = {
+    appBg: isDarkMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-900',
+    navBg: isDarkMode ? 'bg-zinc-950 border-zinc-900' : 'bg-white border-gray-300',
+    cardBg: isDarkMode ? 'bg-zinc-900 border-zinc-900' : 'bg-white border-gray-300',
+    header2Bg: isDarkMode ? 'bg-zinc-800' : 'bg-gray-800', 
+    pointsColor: isDarkMode ? 'text-white' : 'text-gray-900',
+    labelColor: isDarkMode ? 'text-zinc-500' : 'text-gray-500',
+    btnBg: isDarkMode ? 'bg-zinc-800/80 hover:bg-zinc-700 text-white border border-zinc-700/50' : 'bg-gray-200 hover:bg-gray-300 text-gray-900',
+    btnRedBg: isDarkMode ? 'bg-red-900/20 hover:bg-red-800/40 text-red-400 border border-red-900/30' : 'bg-red-100 hover:bg-red-200 text-red-700',
+    advPenBg: isDarkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-gray-50/50 border-gray-200',
+    circleBtn: isDarkMode ? 'bg-transparent hover:bg-zinc-800 text-zinc-500 hover:text-white border border-transparent' : 'bg-white border border-gray-300 hover:bg-gray-100 text-gray-900',
+    menuBg: isDarkMode ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-gray-300 text-gray-900',
+    menuBtn: isDarkMode ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+  };
+
+  return (
+    <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
+      
+      <div className="hidden print:flex flex-col p-4 w-full min-h-screen">
+         <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
+           <PrintBoletim data={{ category, belt, gender, phase, duration: matchTime / 60, f1: fighter1, f2: fighter2 }} logoUrl={user?.logoUrl || logoUrl} user={user} />
+         </div>
+      </div>
+
+      <div className="flex flex-col min-h-screen print:hidden">
+        
+        <div className={`p-4 md:p-6 flex items-center justify-between shadow-xl relative z-10 ${themeClasses.navBg}`}>
+          
+          <div className="hidden xl:flex items-center gap-6 w-1/3">
+            <button onClick={onBackToQueue} className="p-3 rounded-xl flex items-center gap-2 font-bold tracking-widest text-xs uppercase transition-all text-zinc-500 hover:text-white hover:bg-zinc-800">
+              <ChevronLeft size={16} /> Fila
+            </button>
+            <div className="flex items-center border-l border-zinc-800 pl-6 py-1">
+               <img src={logoUrl} alt="Logo" className="h-20 md:h-24 w-auto object-contain mr-6 drop-shadow-lg" />
+               <div className="flex flex-col gap-1 w-full">
+                 <input type="text" placeholder="CATEGORIA / PESO" value={category} onChange={(e) => setCategory(e.target.value.toUpperCase())} className="text-2xl lg:text-3xl bg-transparent focus:outline-none border-b-2 border-transparent focus:border-blue-600 uppercase font-black w-full tracking-tighter leading-none" />
+                 {(belt || gender || phase) && (
+                   <div className="flex items-center gap-2 mt-1 text-zinc-500 font-bold text-xs tracking-widest uppercase">
+                      {[phase, belt, gender].filter(Boolean).join(' • ')}
+                   </div>
+                 )}
+               </div>
+            </div>
+          </div>
+
+          <div className="flex-1 flex justify-center items-center gap-8 md:gap-16">
+            <div className={`text-9xl md:text-[14rem] leading-none font-black tabular-nums tracking-tighter ${timeLeft === 0 ? 'text-blue-500 animate-pulse' : themeClasses.pointsColor}`}>
+              {formatTime(timeLeft)}
+            </div>
+            <div className="flex flex-col gap-4">
+              {timeLeft === 0 ? (
+                <button onClick={() => setShowFinishModal(true)} className="bg-blue-600 text-white p-6 rounded-2xl font-black uppercase shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:bg-blue-500 hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
+                  <CheckCircle size={40} />
+                  <span className="text-xs tracking-widest mt-1">Concluir</span>
+                </button>
+              ) : (
+                <button onClick={toggleTimer} className={`p-6 rounded-2xl shadow-lg transition-all active:scale-95 ${isRunning ? 'bg-amber-500 text-black' : 'bg-green-600 text-white'}`}>
+                  {isRunning ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" className="ml-1" />}
+                </button>
+              )}
+              <button onClick={executeLocalReset} className={`p-4 rounded-xl shadow-sm transition-all active:scale-90 ${themeClasses.circleBtn}`} title="Resetar Timer/Placar Local"><RotateCcw size={24} /></button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 w-1/3">
+            <button onClick={() => { if (isPremium) { window.print() } else { alert("A impressão é um recurso Premium. Acesse a aba 'Minha Conta' para adquirir um plano.") } }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} ${!isPremium ? 'opacity-50' : ''}`} title="Imprimir Resultado">
+              <Printer size={24} />
+            </button>
+            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Tema"><Sun size={24} className={isDarkMode ? 'hidden' : 'block'} /><Moon size={24} className={isDarkMode ? 'block' : 'hidden'} /></button>
+            <button onClick={() => setShowSettings(!showSettings)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Ajustes de Tempo"><Settings size={24} /></button>
+          </div>
+        </div>
+
+        {showSettings && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowSettings(false)}></div>
+            <div className={`absolute top-36 right-8 border border-zinc-800 p-8 rounded-3xl shadow-2xl z-20 w-80 ${themeClasses.menuBg}`}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-black uppercase text-xs tracking-widest text-zinc-500">Ajuste de Tempo</h3>
+                <button onClick={() => setShowSettings(false)} className="text-zinc-500 hover:text-white transition-colors"><X size={20}/></button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[4, 5, 6, 7, 8, 10].map(mins => (
+                  <button key={mins} onClick={() => { setMatchTime(mins * 60); setTimeLeft(mins * 60); setShowSettings(false); }} className={`py-4 rounded-xl font-black text-sm transition-all ${matchTime === mins * 60 ? 'bg-blue-600 text-white' : themeClasses.menuBtn}`}>{mins}m</button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {showFinishModal && (
+          <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-md">
+            <div className={`max-w-lg w-full p-10 rounded-3xl shadow-2xl text-center border border-zinc-800 ${themeClasses.menuBg}`}>
+              <div className="flex justify-center mb-6"><CheckCircle size={64} className="text-blue-500" /></div>
+              <h2 className="text-3xl font-black mb-2 tracking-tighter uppercase">Luta Encerrada</h2>
+              <p className="text-zinc-400 mb-8 text-sm uppercase tracking-widest font-bold">O que deseja fazer com o resultado?</p>
+              
+              <div className="flex flex-col gap-3">
+                {isPremium ? (
+                  <>
+                    <button onClick={() => handleCompleteFight('next')} className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white transition-all">
+                      Salvar e Puxar Próxima Luta
+                    </button>
+                    <button onClick={() => handleCompleteFight('queue')} className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${themeClasses.menuBtn}`}>
+                      Salvar e Voltar à Fila
+                    </button>
+                  </>
+                ) : (
+                  <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-xs text-zinc-500 mb-4">
+                    O salvamento no histórico e passagem automática de fila são recursos <span className="text-yellow-500">Premium</span>.
+                  </div>
+                )}
+                <button onClick={() => {setShowFinishModal(false); onBackToQueue();}} className="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest bg-transparent border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all mt-2">
+                  Sair sem Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
+          <FighterCard num={1} data={fighter1} setFighter={setFighter1} updateScore={(type, val) => updateFighterScore(1, type, val)} isGreenBelt={true} isDarkMode={isDarkMode} themeClasses={themeClasses} />
+          <FighterCard num={2} data={fighter2} setFighter={setFighter2} updateScore={(type, val) => updateFighterScore(2, type, val)} isGreenBelt={false} isDarkMode={isDarkMode} themeClasses={themeClasses} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('login'); 
   const [dashboardTab, setDashboardTab] = useState('queue'); 
   const [isLoading, setIsLoading] = useState(true);
+  const [resetCode, setResetCode] = useState(null);
 
   const loadPremiumState = (uid) => {
     if (!uid) return false;
@@ -1485,6 +1793,16 @@ export default function App() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const actionCode = urlParams.get('oobCode');
+
+    if (mode === 'resetPassword' && actionCode) {
+       setResetCode(actionCode);
+       setCurrentView('resetPassword');
+       setIsLoading(false);
+       return; // Pausa aqui para não passar pelo processo de login
+    }
+
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success') {
@@ -1507,9 +1825,7 @@ export default function App() {
       alert("Houve um problema com o pagamento. Tente novamente.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [user]);
 
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       
@@ -1533,14 +1849,14 @@ export default function App() {
           setFightHistory([]);
         }
         
-        setCurrentView(prev => prev === 'login' ? 'queue' : prev);
+        setCurrentView(prev => prev === 'login' || prev === 'resetPassword' ? 'queue' : prev);
       } else {
         setCurrentView('login');
       }
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -1622,6 +1938,10 @@ export default function App() {
 
   return (
     <>
+      {currentView === 'resetPassword' && (
+        <ResetPasswordScreen oobCode={resetCode} />
+      )}
+
       {currentView === 'login' && (
         <LoginScreen onGuestLogin={() => { setUser({ email: 'Conta Gratuita' }); setCurrentView('queue'); }} />
       )}
