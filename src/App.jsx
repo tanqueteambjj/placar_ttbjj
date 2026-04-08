@@ -670,7 +670,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
   };
 
-  const handlePayment = async (planName, price) => {
+  const handlePayment = async (planName, price, durationDays) => {
     let finalPrice = price;
     setCouponMessage({ text: '', type: '' });
 
@@ -694,6 +694,11 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
 
     setIsProcessingPayment(true);
+    sessionStorage.setItem('pendingPlanDays', durationDays); // Armazenar dinamicamente os dias do plano
+    
+    if (couponCode.trim() !== '') {
+      sessionStorage.setItem('pendingUsedCoupon', couponCode.trim().toUpperCase());
+    }
 
     if (finalPrice <= 0) {
         alert("Cupom de 100% aplicado! Assinatura ativada.");
@@ -731,12 +736,6 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
       const data = await response.json();
       
       if (data.init_point) {
-        if (couponCode.trim() !== '') {
-          const code = couponCode.trim().toUpperCase();
-          const updatedCoupons = { ...coupons, [code]: { ...coupons[code], uses: coupons[code].uses - 1 } };
-          setCoupons(updatedCoupons);
-          localStorage.setItem('app_coupons', JSON.stringify(updatedCoupons));
-        }
         window.location.href = data.init_point; 
       }
       else throw new Error("Falha no link.");
@@ -980,7 +979,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                         <li key={i} className="flex items-start gap-2"><div className={`w-1.5 h-1.5 mt-1.5 rounded-full shrink-0 ${plan.isPopular ? 'bg-yellow-500' : 'bg-blue-500'}`}></div> {feature.trim()}</li>
                       ))}
                     </ul>
-                    <button onClick={() => handlePayment(plan.name, plan.price)} disabled={isProcessingPayment} className={`w-full mt-auto font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 ${plan.isPopular ? 'bg-yellow-500 hover:bg-yellow-400 text-black disabled:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-500 text-white disabled:bg-blue-800'}`}>
+                    <button onClick={() => handlePayment(plan.name, plan.price, plan.durationDays)} disabled={isProcessingPayment} className={`w-full mt-auto font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 ${plan.isPopular ? 'bg-yellow-500 hover:bg-yellow-400 text-black disabled:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-500 text-white disabled:bg-blue-800'}`}>
                       {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
                     </button>
                   </div>
@@ -1156,7 +1155,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                           <li key={i} className="flex items-start gap-2"><div className={`w-1.5 h-1.5 mt-1.5 rounded-full shrink-0 ${plan.isPopular ? 'bg-yellow-500' : 'bg-blue-500'}`}></div> {feature.trim()}</li>
                         ))}
                       </ul>
-                      <button onClick={() => handlePayment(plan.name, plan.price)} disabled={isProcessingPayment} className={`w-full mt-auto font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 ${plan.isPopular ? 'bg-yellow-500 hover:bg-yellow-400 text-black disabled:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-500 text-white disabled:bg-blue-800'}`}>
+                      <button onClick={() => handlePayment(plan.name, plan.price, plan.durationDays)} disabled={isProcessingPayment} className={`w-full mt-auto font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 ${plan.isPopular ? 'bg-yellow-500 hover:bg-yellow-400 text-black disabled:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-500 text-white disabled:bg-blue-800'}`}>
                         {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
                       </button>
                     </div>
@@ -1434,226 +1433,6 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
   );
 };
 
-const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl, onFinishFight, user }) => {
-  const [matchTime, setMatchTime] = useState(300);
-  const [timeLeft, setTimeLeft] = useState(matchTime);
-  const [isRunning, setIsRunning] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showFinishModal, setShowFinishModal] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  
-  const [category, setCategory] = useState(initialFightData?.category || '');
-  const [belt, setBelt] = useState(initialFightData?.belt || '');
-  const [gender, setGender] = useState(initialFightData?.gender || '');
-  const [phase, setPhase] = useState(initialFightData?.phase || '');
-
-  const initialFighter1 = { name: initialFightData?.f1Name || '', team: initialFightData?.f1Team || '', points: 0, advantages: 0, penalties: 0 };
-  const initialFighter2 = { name: initialFightData?.f2Name || '', team: initialFightData?.f2Team || '', points: 0, advantages: 0, penalties: 0 };
-  
-  const [fighter1, setFighter1] = useState(initialFighter1);
-  const [fighter2, setFighter2] = useState(initialFighter2);
-
-  useEffect(() => {
-    if(initialFightData) {
-      setCategory(initialFightData.category || '');
-      setBelt(initialFightData.belt || '');
-      setGender(initialFightData.gender || '');
-      setPhase(initialFightData.phase || '');
-      setFighter1({ ...initialFighter1, name: initialFightData.f1Name, team: initialFightData.f1Team });
-      setFighter2({ ...initialFighter2, name: initialFightData.f2Name, team: initialFightData.f2Team });
-      
-      if(initialFightData.result) {
-         setFighter1({ ...initialFighter1, name: initialFightData.f1Name, team: initialFightData.f1Team, ...initialFightData.result.f1 });
-         setFighter2({ ...initialFighter2, name: initialFightData.f2Name, team: initialFightData.f2Team, ...initialFightData.result.f2 });
-         setTimeLeft(0);
-      } else {
-         setTimeLeft(matchTime);
-      }
-      setIsRunning(false);
-    }
-  }, [initialFightData]);
-
-  const updateFighterScore = useCallback((fighterNum, type, value) => {
-    const isF1 = fighterNum === 1;
-    const setFighter = isF1 ? setFighter1 : setFighter2;
-    const setOpponent = isF1 ? setFighter2 : setFighter1;
-
-    setFighter(prev => {
-      const newValue = Math.max(0, prev[type] + value);
-      
-      if (type === 'penalties') {
-        if (value > 0) {
-          if (newValue === 2) setOpponent(opp => ({ ...opp, advantages: opp.advantages + 1 }));
-          else if (newValue === 3) setOpponent(opp => ({ ...opp, points: opp.points + 2 }));
-        } else if (value < 0) {
-          if (prev.penalties === 2) setOpponent(opp => ({ ...opp, advantages: Math.max(0, opp.advantages - 1) }));
-          else if (prev.penalties === 3) setOpponent(opp => ({ ...opp, points: Math.max(0, opp.points - 2) }));
-        }
-      }
-      return { ...prev, [type]: newValue };
-    });
-  }, []);
-
-  useEffect(() => {
-    let interval = null;
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => setTimeLeft((time) => time - 1), 1000);
-    } else if (timeLeft === 0) {
-      setIsRunning(false);
-    }
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft]);
-
-  const toggleTimer = () => setIsRunning(!isRunning);
-
-  const handleCompleteFight = (action) => {
-    const scoreData = { category, belt, gender, phase, duration: matchTime / 60, f1: { ...fighter1 }, f2: { ...fighter2 } };
-    onFinishFight(initialFightData?.catId, initialFightData?.id, scoreData, action);
-    setShowFinishModal(false);
-  };
-
-  const executeLocalReset = () => {
-    setIsRunning(false);
-    setTimeLeft(matchTime);
-    setFighter1({ ...fighter1, points: 0, advantages: 0, penalties: 0 });
-    setFighter2({ ...fighter2, points: 0, advantages: 0, penalties: 0 });
-  };
-
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  const themeClasses = {
-    appBg: isDarkMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-900',
-    navBg: isDarkMode ? 'bg-zinc-950 border-zinc-900' : 'bg-white border-gray-300',
-    cardBg: isDarkMode ? 'bg-zinc-900 border-zinc-900' : 'bg-white border-gray-300',
-    header2Bg: isDarkMode ? 'bg-zinc-800' : 'bg-gray-800', 
-    pointsColor: isDarkMode ? 'text-white' : 'text-gray-900',
-    labelColor: isDarkMode ? 'text-zinc-500' : 'text-gray-500',
-    btnBg: isDarkMode ? 'bg-zinc-800/80 hover:bg-zinc-700 text-white border border-zinc-700/50' : 'bg-gray-200 hover:bg-gray-300 text-gray-900',
-    btnRedBg: isDarkMode ? 'bg-red-900/20 hover:bg-red-800/40 text-red-400 border border-red-900/30' : 'bg-red-100 hover:bg-red-200 text-red-700',
-    advPenBg: isDarkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-gray-50/50 border-gray-200',
-    circleBtn: isDarkMode ? 'bg-transparent hover:bg-zinc-800 text-zinc-500 hover:text-white border border-transparent' : 'bg-white border border-gray-300 hover:bg-gray-100 text-gray-900',
-    menuBg: isDarkMode ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-gray-300 text-gray-900',
-    menuBtn: isDarkMode ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
-  };
-
-  return (
-    <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
-      
-      <div className="hidden print:flex flex-col p-4 w-full min-h-screen">
-         <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
-           <PrintBoletim data={{ category, belt, gender, phase, duration: matchTime / 60, f1: fighter1, f2: fighter2 }} logoUrl={user?.logoUrl || logoUrl} user={user} />
-         </div>
-      </div>
-
-      <div className="flex flex-col min-h-screen print:hidden">
-        
-        <div className={`p-4 md:p-6 flex items-center justify-between shadow-xl relative z-10 ${themeClasses.navBg}`}>
-          
-          <div className="hidden xl:flex items-center gap-6 w-1/3">
-            <button onClick={onBackToQueue} className="p-3 rounded-xl flex items-center gap-2 font-bold tracking-widest text-xs uppercase transition-all text-zinc-500 hover:text-white hover:bg-zinc-800">
-              <ChevronLeft size={16} /> Fila
-            </button>
-            <div className="flex items-center border-l border-zinc-800 pl-6 py-1">
-               <img src={logoUrl} alt="Logo" className="h-20 md:h-24 w-auto object-contain mr-6 drop-shadow-lg" />
-               <div className="flex flex-col gap-1 w-full">
-                 <input type="text" placeholder="CATEGORIA / PESO" value={category} onChange={(e) => setCategory(e.target.value.toUpperCase())} className="text-2xl lg:text-3xl bg-transparent focus:outline-none border-b-2 border-transparent focus:border-blue-600 uppercase font-black w-full tracking-tighter leading-none" />
-                 {(belt || gender || phase) && (
-                   <div className="flex items-center gap-2 mt-1 text-zinc-500 font-bold text-xs tracking-widest uppercase">
-                      {[phase, belt, gender].filter(Boolean).join(' • ')}
-                   </div>
-                 )}
-               </div>
-            </div>
-          </div>
-
-          <div className="flex-1 flex justify-center items-center gap-8 md:gap-16">
-            <div className={`text-9xl md:text-[14rem] leading-none font-black tabular-nums tracking-tighter ${timeLeft === 0 ? 'text-blue-500 animate-pulse' : themeClasses.pointsColor}`}>
-              {formatTime(timeLeft)}
-            </div>
-            <div className="flex flex-col gap-4">
-              {timeLeft === 0 ? (
-                <button onClick={() => setShowFinishModal(true)} className="bg-blue-600 text-white p-6 rounded-2xl font-black uppercase shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:bg-blue-500 hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
-                  <CheckCircle size={40} />
-                  <span className="text-xs tracking-widest mt-1">Concluir</span>
-                </button>
-              ) : (
-                <button onClick={toggleTimer} className={`p-6 rounded-2xl shadow-lg transition-all active:scale-95 ${isRunning ? 'bg-amber-500 text-black' : 'bg-green-600 text-white'}`}>
-                  {isRunning ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" className="ml-1" />}
-                </button>
-              )}
-              <button onClick={executeLocalReset} className={`p-4 rounded-xl shadow-sm transition-all active:scale-90 ${themeClasses.circleBtn}`} title="Resetar Timer/Placar Local"><RotateCcw size={24} /></button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 w-1/3">
-            <button onClick={() => { if (isPremium) { window.print() } else { alert("A impressão é um recurso Premium. Acesse a aba 'Minha Conta' para adquirir um plano.") } }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} ${!isPremium ? 'opacity-50' : ''}`} title="Imprimir Resultado">
-              <Printer size={24} />
-            </button>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Tema"><Sun size={24} className={isDarkMode ? 'hidden' : 'block'} /><Moon size={24} className={isDarkMode ? 'block' : 'hidden'} /></button>
-            <button onClick={() => setShowSettings(!showSettings)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Ajustes de Tempo"><Settings size={24} /></button>
-          </div>
-        </div>
-
-        {showSettings && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setShowSettings(false)}></div>
-            <div className={`absolute top-36 right-8 border border-zinc-800 p-8 rounded-3xl shadow-2xl z-20 w-80 ${themeClasses.menuBg}`}>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-black uppercase text-xs tracking-widest text-zinc-500">Ajuste de Tempo</h3>
-                <button onClick={() => setShowSettings(false)} className="text-zinc-500 hover:text-white transition-colors"><X size={20}/></button>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {[4, 5, 6, 7, 8, 10].map(mins => (
-                  <button key={mins} onClick={() => { setMatchTime(mins * 60); setTimeLeft(mins * 60); setShowSettings(false); }} className={`py-4 rounded-xl font-black text-sm transition-all ${matchTime === mins * 60 ? 'bg-blue-600 text-white' : themeClasses.menuBtn}`}>{mins}m</button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {showFinishModal && (
-          <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-md">
-            <div className={`max-w-lg w-full p-10 rounded-3xl shadow-2xl text-center border border-zinc-800 ${themeClasses.menuBg}`}>
-              <div className="flex justify-center mb-6"><CheckCircle size={64} className="text-blue-500" /></div>
-              <h2 className="text-3xl font-black mb-2 tracking-tighter uppercase">Luta Encerrada</h2>
-              <p className="text-zinc-400 mb-8 text-sm uppercase tracking-widest font-bold">O que deseja fazer com o resultado?</p>
-              
-              <div className="flex flex-col gap-3">
-                {isPremium ? (
-                  <>
-                    <button onClick={() => handleCompleteFight('next')} className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white transition-all">
-                      Salvar e Puxar Próxima Luta
-                    </button>
-                    <button onClick={() => handleCompleteFight('queue')} className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${themeClasses.menuBtn}`}>
-                      Salvar e Voltar à Fila
-                    </button>
-                  </>
-                ) : (
-                  <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-xs text-zinc-500 mb-4">
-                    O salvamento no histórico e passagem automática de fila são recursos <span className="text-yellow-500">Premium</span>.
-                  </div>
-                )}
-                <button onClick={() => {setShowFinishModal(false); onBackToQueue();}} className="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest bg-transparent border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all mt-2">
-                  Sair sem Salvar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
-          <FighterCard num={1} data={fighter1} setFighter={setFighter1} updateScore={(type, val) => updateFighterScore(1, type, val)} isGreenBelt={true} isDarkMode={isDarkMode} themeClasses={themeClasses} />
-          <FighterCard num={2} data={fighter2} setFighter={setFighter2} updateScore={(type, val) => updateFighterScore(2, type, val)} isGreenBelt={false} isDarkMode={isDarkMode} themeClasses={themeClasses} />
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function App() {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('login'); 
@@ -1709,10 +1488,21 @@ export default function App() {
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success') {
-      setIsPremium(true);
-      if(user) localStorage.setItem(`premiumUntil_${user.uid}`, Date.now() + (30 * 24 * 60 * 60 * 1000));
-      alert("Pagamento aprovado! Bem-vindo ao Modo Premium.");
-      window.history.replaceState({}, document.title, window.location.pathname);
+      if (user) {
+        setIsPremium(true);
+        const pendingDays = parseInt(sessionStorage.getItem('pendingPlanDays')) || 30;
+        localStorage.setItem(`premiumUntil_${user.uid}`, Date.now() + (pendingDays * 24 * 60 * 60 * 1000));
+        
+        // Remove completed coupon usage globally if needed (already decremented before redirect)
+        const usedCoupon = sessionStorage.getItem('pendingUsedCoupon');
+        if(usedCoupon) {
+           sessionStorage.removeItem('pendingUsedCoupon');
+        }
+
+        sessionStorage.removeItem('pendingPlanDays');
+        alert("Pagamento aprovado! Bem-vindo ao Modo Premium.");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     } else if (paymentStatus === 'failure') {
       alert("Houve um problema com o pagamento. Tente novamente.");
       window.history.replaceState({}, document.title, window.location.pathname);
