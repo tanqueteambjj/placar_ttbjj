@@ -255,7 +255,14 @@ const LoginScreen = ({ onGuestLogin }) => {
         
         // Salva registro local para visualização do Admin
         const existingUsers = JSON.parse(localStorage.getItem('app_registered_users') || '[]');
-        existingUsers.push({ uid: userCredential.user.uid, email, name: name.toUpperCase(), date: new Date().toISOString() });
+        existingUsers.push({ 
+            uid: userCredential.user.uid, 
+            email, 
+            name: name.toUpperCase(), 
+            date: new Date().toISOString(),
+            currentPlan: 'GRATUITO',
+            premiumUntil: null
+        });
         localStorage.setItem('app_registered_users', JSON.stringify(existingUsers));
 
       } else {
@@ -404,9 +411,9 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 
   // Admin: Cupons
   const defaultCoupons = { 
-    'OSS20': { discount: 0.20, uses: 100 }, 
-    'TANQUE50': { discount: 0.50, uses: 50 }, 
-    'TESTE100': { discount: 0.99, uses: 10 } 
+    'OSS20': { discount: 0.20, uses: 100, plan: 'TODOS' }, 
+    'TANQUE50': { discount: 0.50, uses: 50, plan: 'TODOS' }, 
+    'TESTE100': { discount: 1.0, uses: 10, plan: 'TODOS' } 
   };
   const [coupons, setCoupons] = useState(() => {
     const saved = localStorage.getItem('app_coupons');
@@ -419,9 +426,13 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponDiscount, setNewCouponDiscount] = useState('');
   const [newCouponUses, setNewCouponUses] = useState('');
+  const [newCouponPlan, setNewCouponPlan] = useState('TODOS');
 
   // Admin: Usuários
   const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [editingAdminUser, setEditingAdminUser] = useState(null);
+  const [editUserPlan, setEditUserPlan] = useState('');
+  const [editUserDays, setEditUserDays] = useState(30);
 
   useEffect(() => {
     if (isAdmin) {
@@ -431,7 +442,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
   }, [coupons, plans, isAdmin]);
 
-  // Funções Admin
+  // Funções Admin - Cupons e Planos
   const handleAddCoupon = (e) => {
     e.preventDefault();
     if(!newCouponCode || !newCouponDiscount || !newCouponUses) return;
@@ -442,8 +453,8 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     if(isNaN(discount) || discount <= 0 || discount > 1) return alert('Desconto inválido. Use um valor entre 1 e 100.');
     if(isNaN(uses) || uses <= 0) return alert('Quantidade de usos inválida.');
 
-    setCoupons(prev => ({...prev, [code]: { discount, uses }}));
-    setNewCouponCode(''); setNewCouponDiscount(''); setNewCouponUses('');
+    setCoupons(prev => ({...prev, [code]: { discount, uses, plan: newCouponPlan }}));
+    setNewCouponCode(''); setNewCouponDiscount(''); setNewCouponUses(''); setNewCouponPlan('TODOS');
   };
   
   const removeCoupon = (code) => { 
@@ -463,6 +474,48 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     if(window.confirm('Remover este plano?')) setPlans(plans.filter(p => p.id !== id)); 
   };
 
+  // Funções Admin - Usuários
+  const openAdminUserEdit = (u) => {
+    setEditingAdminUser(u);
+    setEditUserPlan(u.currentPlan || 'GRATUITO');
+    setEditUserDays(30);
+  };
+
+  const handleAdminSaveUser = (e) => {
+    e.preventDefault();
+    
+    let newPremiumUntil = null;
+    if(editUserPlan !== 'GRATUITO') {
+        const ms = Date.now() + (editUserDays * 24 * 60 * 60 * 1000);
+        newPremiumUntil = ms;
+        localStorage.setItem(`premiumUntil_${editingAdminUser.uid}`, ms);
+    } else {
+        localStorage.removeItem(`premiumUntil_${editingAdminUser.uid}`);
+    }
+
+    const updated = registeredUsers.map(u => {
+        if(u.uid === editingAdminUser.uid) {
+            return {...u, currentPlan: editUserPlan, premiumUntil: newPremiumUntil};
+        }
+        return u;
+    });
+    
+    setRegisteredUsers(updated);
+    localStorage.setItem('app_registered_users', JSON.stringify(updated));
+    setEditingAdminUser(null);
+    alert("Usuário atualizado com sucesso no dispositivo!");
+  };
+
+  const handleAdminResetPassword = async () => {
+    if(!editingAdminUser) return;
+    try {
+        await sendPasswordResetEmail(auth, editingAdminUser.email);
+        alert(`Email oficial de redefinição enviado para ${editingAdminUser.email}!`);
+    } catch (err) {
+        alert("Erro ao enviar email: " + err.message);
+    }
+  };
+
   const removeUserLocal = (uid) => {
     if(window.confirm('Isto removerá o registo apenas desta lista local (Não apaga a conta real no Firebase). Prosseguir?')) {
       const updated = registeredUsers.filter(u => u.uid !== uid);
@@ -471,7 +524,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
   };
 
-  // Perfil
+  // Perfil Usuário Comum
   const [fullName, setFullName] = useState(localStorage.getItem(`fullName_${user?.uid}`) || '');
   const [profileName, setProfileName] = useState(user?.displayName || '');
   const [newPassword, setNewPassword] = useState('');
@@ -626,6 +679,10 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
       const couponData = coupons[code];
       
       if (couponData && couponData.uses > 0) {
+        if (couponData.plan !== 'TODOS' && couponData.plan !== planName) {
+            setCouponMessage({ text: `Este cupom só é válido para o plano: ${couponData.plan}`, type: 'error' });
+            return;
+        }
         finalPrice = Number((price - (price * couponData.discount)).toFixed(2));
       } else if (couponData && couponData.uses <= 0) {
         setCouponMessage({ text: 'Este cupom já atingiu o limite de usos.', type: 'error' });
@@ -639,7 +696,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     setIsProcessingPayment(true);
 
     if (finalPrice <= 0) {
-        alert("Cupom de 100% aplicado! Bem-vindo ao Modo Premium.");
+        alert("Cupom de 100% aplicado! Assinatura ativada.");
         if (couponCode.trim() !== '') {
           const code = couponCode.trim().toUpperCase();
           const updatedCoupons = { ...coupons, [code]: { ...coupons[code], uses: coupons[code].uses - 1 } };
@@ -811,8 +868,44 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
       {/* MODAIS APLICAÇÃO */}
       <div className="print:hidden">
         
-        {/* Modal Perfil */}
-        {showProfileModal && (
+        {/* Modal Perfil e Admin User Edit*/}
+        {editingAdminUser && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="max-w-md w-full bg-zinc-900 border border-purple-500/50 rounded-3xl p-8 relative shadow-2xl">
+              <button onClick={() => setEditingAdminUser(null)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2 flex items-center gap-2"><User size={24} className="text-purple-500"/> Editar Usuário</h2>
+              <p className="text-zinc-400 font-bold text-sm uppercase tracking-widest">{editingAdminUser.name}</p>
+              <p className="text-zinc-500 text-xs mb-6">{editingAdminUser.email}</p>
+              
+              <form onSubmit={handleAdminSaveUser} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Plano Atual</label>
+                  <select value={editUserPlan} onChange={e => setEditUserPlan(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-purple-500 outline-none uppercase text-sm text-zinc-300 cursor-pointer">
+                    <option value="GRATUITO">GRATUITO (Sem Acesso)</option>
+                    {plans.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+                
+                {editUserPlan !== 'GRATUITO' && (
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Adicionar Dias de Acesso</label>
+                    <input type="number" min="1" value={editUserDays} onChange={e => setEditUserDays(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 focus:border-purple-500 outline-none uppercase text-sm text-zinc-300" />
+                  </div>
+                )}
+
+                <button type="submit" className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-xl uppercase tracking-widest mt-4 shadow-lg active:scale-95 transition-all">Salvar Alterações</button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-zinc-800">
+                 <button type="button" onClick={handleAdminResetPassword} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                    <Mail size={14}/> Enviar Redefinição de Senha
+                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showProfileModal && !editingAdminUser && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
             <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative shadow-2xl">
               <button onClick={() => setShowProfileModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
@@ -1011,8 +1104,67 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
           <nav className="flex flex-wrap gap-4 md:gap-6 mb-8 border-b border-zinc-800">
             <button onClick={() => setActiveTab('queue')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'queue' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Fila Livre</button>
             <button onClick={() => setActiveTab('categories')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'categories' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Categorias e Chaves</button>
+            <button onClick={() => setActiveTab('plans')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'plans' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Planos</button>
             {isAdmin && <button onClick={() => setActiveTab('admin')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'admin' ? 'text-purple-500 border-b-2 border-purple-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Administração</button>}
           </nav>
+
+          {/* TAB: PLANOS (Público) */}
+          {activeTab === 'plans' && (
+            <div className="space-y-8">
+              <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl relative overflow-hidden">
+                <div className="text-center mb-8">
+                  <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
+                  <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter">Planos Premium</h2>
+                  <p className="text-zinc-400 mt-2 text-sm md:text-base">Escolha o plano ideal para as suas necessidades e libere todos os recursos do sistema.</p>
+                </div>
+                
+                {isPremium && (
+                  <div className="mb-8 p-4 bg-green-900/20 border border-green-500/50 rounded-2xl text-center max-w-2xl mx-auto">
+                    <p className="text-green-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                      <CheckCircle size={18} /> Você já possui uma assinatura Premium ativa!
+                    </p>
+                  </div>
+                )}
+
+                {/* CAMPO DE CUPOM */}
+                <div className="max-w-sm mx-auto mb-10">
+                  <input
+                    type="text"
+                    placeholder="TEM UM CUPOM DE DESCONTO?"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-center font-bold tracking-widest text-sm transition-colors focus:bg-zinc-900"
+                  />
+                  {couponMessage.text && (
+                    <p className={`mt-2 text-xs font-bold text-center uppercase tracking-widest ${couponMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                      {couponMessage.text}
+                    </p>
+                  )}
+                </div>
+
+                <div className={`grid md:grid-cols-${Math.min(plans.length, 3)} gap-8 max-w-5xl mx-auto`}>
+                  {plans.map(plan => (
+                    <div key={plan.id} className={`bg-zinc-950 border-2 ${plan.isPopular ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-blue-500'} transition-all rounded-2xl p-6 relative flex flex-col`}>
+                      {plan.isPopular && <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">Mais Popular</div>}
+                      <div className="flex justify-between items-start mb-4 mt-2">
+                        <div><h3 className={`text-2xl font-black uppercase ${plan.isPopular ? 'text-yellow-500' : 'text-blue-400'}`}>{plan.name}</h3><p className="text-zinc-500 font-bold text-sm uppercase">Acesso por {plan.durationDays} Dias</p></div>
+                        {plan.isPopular ? <Calendar size={32} className="text-yellow-500" /> : <Zap size={32} className="text-blue-500" />}
+                      </div>
+                      <div className="text-5xl font-black mb-6">R$ {plan.price}<span className="text-xl text-zinc-500">,00</span></div>
+                      <ul className="space-y-3 text-sm text-zinc-300 font-medium mb-8 flex-1">
+                        {plan.features.split(',').map((feature, i) => (
+                          <li key={i} className="flex items-start gap-2"><div className={`w-1.5 h-1.5 mt-1.5 rounded-full shrink-0 ${plan.isPopular ? 'bg-yellow-500' : 'bg-blue-500'}`}></div> {feature.trim()}</li>
+                        ))}
+                      </ul>
+                      <button onClick={() => handlePayment(plan.name, plan.price)} disabled={isProcessingPayment} className={`w-full mt-auto font-black py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 ${plan.isPopular ? 'bg-yellow-500 hover:bg-yellow-400 text-black disabled:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-500 text-white disabled:bg-blue-800'}`}>
+                        {isProcessingPayment ? <Loader2 className="animate-spin" /> : <><QrCode size={20} /> Pagar com PIX/Cartão</>}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* TAB: ADMIN */}
           {activeTab === 'admin' && isAdmin && (
@@ -1020,7 +1172,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
               {/* SubNavegação Admin */}
               <div className="flex gap-4 border-b border-zinc-800/50 mb-6">
                  <button onClick={() => setAdminSubTab('plans')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'plans' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Planos Premium</button>
-                 <button onClick={() => setAdminSubTab('users')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'users' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Usuários Registados</button>
+                 <button onClick={() => setAdminSubTab('users')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'users' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Usuários</button>
                  <button onClick={() => setAdminSubTab('coupons')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'coupons' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Cupons</button>
               </div>
 
@@ -1072,16 +1224,16 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 
               {adminSubTab === 'users' && (
                 <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden">
-                  <h2 className="text-xl font-black uppercase tracking-tighter mb-2 flex items-center gap-2 text-purple-400"><Users size={24}/> Registos Locais</h2>
-                  <p className="text-xs text-zinc-500 mb-6">Esta lista mostra as contas que se registaram através deste dispositivo. O banco de dados de contas completo encontra-se no Firebase Console.</p>
+                  <h2 className="text-xl font-black uppercase tracking-tighter mb-2 flex items-center gap-2 text-purple-400"><Users size={24}/> Gestão de Usuários (Local)</h2>
+                  <p className="text-xs text-zinc-500 mb-6">Esta lista mostra as contas e planos ativos. O sistema envia links oficiais de recuperação pelo Firebase.</p>
                   
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left border-collapse">
                       <thead>
                         <tr className="border-b border-zinc-800">
-                          <th className="p-3 font-black uppercase text-zinc-500">Data</th>
+                          <th className="p-3 font-black uppercase text-zinc-500">Cadastro</th>
                           <th className="p-3 font-black uppercase text-zinc-500">Nome (Academia)</th>
-                          <th className="p-3 font-black uppercase text-zinc-500">Email</th>
+                          <th className="p-3 font-black uppercase text-zinc-500">Plano Atual</th>
                           <th className="p-3 font-black uppercase text-zinc-500 text-right">Ação</th>
                         </tr>
                       </thead>
@@ -1089,16 +1241,24 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                         {registeredUsers.length === 0 ? (
                           <tr><td colSpan="4" className="text-center p-6 text-zinc-600 font-bold uppercase">Nenhum registo local encontrado.</td></tr>
                         ) : (
-                          registeredUsers.map(u => (
-                            <tr key={u.uid} className="border-b border-zinc-800/50 hover:bg-zinc-950/50">
-                              <td className="p-3 font-mono text-xs text-zinc-400">{new Date(u.date).toLocaleDateString()}</td>
-                              <td className="p-3 font-bold uppercase">{u.name}</td>
-                              <td className="p-3 text-zinc-400">{u.email}</td>
-                              <td className="p-3 text-right">
-                                <button onClick={() => removeUserLocal(u.uid)} className="text-zinc-600 hover:text-red-500 transition-colors" title="Remover da vista local"><X size={16}/></button>
-                              </td>
-                            </tr>
-                          ))
+                          registeredUsers.map(u => {
+                            const isPremiumActive = u.premiumUntil && u.premiumUntil > Date.now();
+                            return (
+                              <tr key={u.uid} className="border-b border-zinc-800/50 hover:bg-zinc-950/50">
+                                <td className="p-3 font-mono text-xs text-zinc-400">{new Date(u.date).toLocaleDateString()}</td>
+                                <td className="p-3 font-bold uppercase">
+                                  {u.name} <br/><span className="text-[10px] text-zinc-500 font-normal normal-case">{u.email}</span>
+                                </td>
+                                <td className="p-3 text-zinc-300 font-bold text-xs uppercase">
+                                  {isPremiumActive ? <span className="text-yellow-500">{u.currentPlan}</span> : <span className="text-zinc-500">GRATUITO</span>}
+                                </td>
+                                <td className="p-3 text-right">
+                                  <button onClick={() => openAdminUserEdit(u)} className="p-2 bg-zinc-800 hover:bg-purple-600 hover:text-white rounded-lg transition-colors mr-2"><Edit2 size={14}/></button>
+                                  <button onClick={() => removeUserLocal(u.uid)} className="p-2 text-zinc-600 hover:text-red-500 transition-colors"><X size={14}/></button>
+                                </td>
+                              </tr>
+                            )
+                          })
                         )}
                       </tbody>
                     </table>
@@ -1122,6 +1282,13 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Usos Limite</label>
                        <input type="number" min="1" value={newCouponUses} onChange={(e) => setNewCouponUses(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none text-sm" placeholder="EX: 10" required />
                      </div>
+                     <div className="w-full md:w-48">
+                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Plano Válido</label>
+                       <select value={newCouponPlan} onChange={(e) => setNewCouponPlan(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:border-purple-500 outline-none text-sm">
+                         <option value="TODOS">Todos os Planos</option>
+                         {plans.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                       </select>
+                     </div>
                      <button type="submit" className="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white font-black py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest h-[46px]">
                        Criar
                      </button>
@@ -1132,9 +1299,10 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                       <div key={code} className="flex justify-between items-center bg-zinc-950 p-4 rounded-xl border border-zinc-800">
                          <div>
                            <span className="font-black text-white text-lg tracking-widest">{code}</span>
-                           <div className="flex gap-2 mt-1">
+                           <div className="flex gap-2 mt-1 flex-wrap">
                              <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-bold">{(data.discount * 100).toFixed(0)}% OFF</span>
                              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">Restam: {data.uses}</span>
+                             <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs font-bold">{data.plan === 'TODOS' ? 'Todos os Planos' : data.plan}</span>
                            </div>
                          </div>
                          <button onClick={() => removeCoupon(code)} className="p-2 text-zinc-500 hover:text-red-500 transition-colors bg-zinc-900 rounded-lg"><Trash2 size={16}/></button>
