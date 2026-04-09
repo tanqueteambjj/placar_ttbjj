@@ -510,7 +510,7 @@ const LoginScreen = ({ onGuestLogin }) => {
 };
 
 // 3. Tela de Gestão do Evento (Dashboard)
-const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, onClearAll, triggerPrintReceipt }) => {
+const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, onClearAll, onShowReceipt }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [printMode, setPrintMode] = useState(null); 
@@ -668,8 +668,12 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         newPremiumUntil = ms;
         newPremiumSince = newPremiumSince || Date.now();
         localStorage.setItem(`premiumUntil_${editingAdminUser.uid}`, ms);
+        localStorage.setItem(`premiumSince_${editingAdminUser.uid}`, newPremiumSince);
+        localStorage.setItem(`premiumPlan_${editingAdminUser.uid}`, editUserPlan);
     } else {
         localStorage.removeItem(`premiumUntil_${editingAdminUser.uid}`);
+        localStorage.removeItem(`premiumSince_${editingAdminUser.uid}`);
+        localStorage.removeItem(`premiumPlan_${editingAdminUser.uid}`);
         newPremiumSince = null;
     }
 
@@ -1130,23 +1134,60 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
               {user?.email === 'Conta Gratuita' ? (
                 <p className="text-center text-zinc-500 text-sm">Modo de visitante temporário.</p>
               ) : (
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
-                  {profileMessage.text && <div className={`p-3 rounded-lg text-sm text-center font-bold ${profileMessage.type === 'error' ? 'bg-red-900/50 text-red-200' : 'bg-green-900/50 text-green-200'}`}>{profileMessage.text}</div>}
-                  <div>
-                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome Completo</label>
-                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição (Placar / Impressão)</label>
-                    <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-sm" />
-                  </div>
-                  <div className="pt-4 border-t border-zinc-800 mt-2">
-                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Alterar Senha</h3>
-                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm mb-3" placeholder="Nova Senha Forte" />
-                    <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Confirmar Nova Senha" />
-                  </div>
-                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-4">Salvar</button>
-                </form>
+                <>
+                  {/* DETALHES DO PLANO PREMIUM DO USUÁRIO */}
+                  {isPremium && (
+                    <div className="mb-6 p-5 bg-zinc-950 border border-yellow-500/30 rounded-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/10 rounded-bl-full pointer-events-none"></div>
+                      <h3 className="text-yellow-500 font-black uppercase tracking-widest text-xs flex items-center gap-2 mb-4">
+                        <Crown size={16}/> Sua Assinatura
+                      </h3>
+                      <div className="space-y-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+                          <span>Plano Atual:</span>
+                          <span className="text-white text-xs">{localStorage.getItem(`premiumPlan_${user.uid}`) || 'Premium'}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+                          <span>Data de Ativação:</span>
+                          <span className="text-white">{localStorage.getItem(`premiumSince_${user.uid}`) ? new Date(parseInt(localStorage.getItem(`premiumSince_${user.uid}`))).toLocaleDateString() : '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Válido Até:</span>
+                          <span className="text-yellow-500">{localStorage.getItem(`premiumUntil_${user.uid}`) ? new Date(parseInt(localStorage.getItem(`premiumUntil_${user.uid}`))).toLocaleDateString() : '-'}</span>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => {
+                        const receiptStr = localStorage.getItem(`lastReceipt_${user.uid}`);
+                        if (receiptStr) {
+                           setShowProfileModal(false);
+                           onShowReceipt(JSON.parse(receiptStr));
+                        } else {
+                           alert('Nenhum recibo encontrado no histórico deste dispositivo.');
+                        }
+                      }} className="w-full mt-5 py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 rounded-xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-colors border border-zinc-700 font-black shadow-sm">
+                        <Printer size={14}/> Visualizar Recibo
+                      </button>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    {profileMessage.text && <div className={`p-3 rounded-lg text-sm text-center font-bold ${profileMessage.type === 'error' ? 'bg-red-900/50 text-red-200' : 'bg-green-900/50 text-green-200'}`}>{profileMessage.text}</div>}
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome Completo</label>
+                      <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Nome de Exibição (Placar / Impressão)</label>
+                      <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value.toUpperCase())} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none uppercase text-sm" />
+                    </div>
+                    <div className="pt-4 border-t border-zinc-800 mt-2">
+                      <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Alterar Senha</h3>
+                      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm mb-3" placeholder="Nova Senha Forte" />
+                      <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm" placeholder="Confirmar Nova Senha" />
+                    </div>
+                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest mt-4">Salvar</button>
+                  </form>
+                </>
               )}
             </div>
           </div>
@@ -2207,6 +2248,7 @@ export default function App() {
           user={user} queue={queue} setQueue={setQueue} categories={categories} setCategories={setCategories} 
           onStartFight={startFight} onLogout={handleLogout} onClearAll={handleClearAll}
           isPremium={isPremium} logoUrl={logoUrl} setLogoUrl={setLogoUrl} fightHistory={fightHistory}
+          onShowReceipt={(receipt) => setPendingReceipt(receipt)}
         />
       )}
       
