@@ -1,82 +1,22 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    
+    <!-- Ícone da aba do navegador (Favicon) com a logo da academia -->
+    <link rel="icon" type="image/png" href="https://iili.io/qC543c7.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- === TAGS DE SEO PARA O GOOGLE === -->
     <title>Placar de Jiu-Jitsu Profissional | Tanque Team BJJ</title>
     <meta name="description" content="Sistema de placar oficial para campeonatos de Jiu-Jitsu. Gestão de chaves, fila de lutas, pontuação e emissão de boletins online.">
     <meta name="keywords" content="jiu-jitsu, bjj, placar, campeonato, tanque team, artes marciais">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @media print {
-            .no-print { display: none; }
-            body { background: white; }
-            .print-area { width: 100%; }
-        }
-    </style>
-</head>
-<body class="bg-zinc-900 text-white min-h-screen flex flex-col items-center p-4">
-
-    <!-- Cabeçalho / Logo -->
-    <header class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-yellow-500">PLACAR TTBJJ</h1>
-        <p class="text-zinc-400">Tanque Team Brazilian Jiu-Jitsu</p>
-    </header>
-
-    <!-- Área do Placar -->
-    <main class="w-full max-w-4xl grid grid-cols-2 gap-8 mb-12">
-        <!-- Atleta 1 (Azul) -->
-        <div class="bg-blue-800 p-6 rounded-2xl shadow-xl text-center">
-            <input type="text" placeholder="Atleta Azul" class="bg-transparent text-2xl font-bold text-center w-full mb-4 border-b border-blue-400 outline-none uppercase">
-            <div class="text-8xl font-black mb-4">12</div>
-            <div class="flex justify-around text-sm font-bold uppercase tracking-widest">
-                <div>V: 2</div>
-                <div>P: 1</div>
-            </div>
-        </div>
-
-        <!-- Atleta 2 (Branco/Vermelho) -->
-        <div class="bg-zinc-100 p-6 rounded-2xl shadow-xl text-center text-zinc-900">
-            <input type="text" placeholder="Atleta Branco" class="bg-transparent text-2xl font-bold text-center w-full mb-4 border-b border-zinc-400 outline-none uppercase">
-            <div class="text-8xl font-black mb-4">9</div>
-            <div class="flex justify-around text-sm font-bold uppercase tracking-widest">
-                <div>V: 0</div>
-                <div>P: 0</div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Timer / Controles -->
-    <div class="text-center mb-12">
-        <div class="text-7xl font-mono mb-4">05:00</div>
-        <div class="flex gap-4 no-print">
-            <button class="bg-green-600 px-6 py-2 rounded-lg font-bold hover:bg-green-700">INICIAR</button>
-            <button class="bg-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-700">PAUSAR</button>
-            <button class="bg-zinc-700 px-6 py-2 rounded-lg font-bold hover:bg-zinc-600">RESET</button>
-        </div>
-    </div>
-
-    <!-- SEÇÃO DE ASSINATURA (Ajustada para descer mais) -->
-    <!-- Adicionamos 'mt-48' (12rem/192px) para empurrar para baixo. 
-         Pode aumentar para 'mt-64' ou mais se necessário -->
-    <footer class="w-full max-w-4xl mt-64 border-t border-zinc-700 pt-12 print:mt-96">
-        <div class="grid grid-cols-2 gap-20">
-            <div class="text-center">
-                <div class="border-t border-zinc-500 w-full mb-2"></div>
-                <p class="text-sm text-zinc-400 uppercase tracking-tighter">Assinatura do Árbitro</p>
-            </div>
-            <div class="text-center">
-                <div class="border-t border-zinc-500 w-full mb-2"></div>
-                <p class="text-sm text-zinc-400 uppercase tracking-tighter">Assinatura do Mesário</p>
-            </div>
-        </div>
-        
-        <div class="text-center mt-12 no-print">
-            <button onclick="window.print()" class="bg-yellow-500 text-black px-8 py-3 rounded-full font-black hover:bg-yellow-400 transition-all">
-                GERAR SÚMULA (PDF)
-            </button>
-        </div>
-    </footer>
-
-</body>
+  </head>
+  <body>
+    <!-- ESTA DIV É OBRIGATÓRIA PARA O REACT FUNCIONAR -->
+    <div id="root"></div>
+    
+    <!-- ESTE SCRIPT CARREGA O SEU CÓDIGO REACT -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
