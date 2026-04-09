@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Users, Package, Mail } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Users, Package, Mail, GripVertical } from 'lucide-react';
 
 // === CONFIGURAÇÃO DO FIREBASE ===
 import { initializeApp } from "firebase/app";
@@ -74,6 +74,55 @@ const getWinner = (res) => {
 };
 
 // === COMPONENTES DA INTERFACE ===
+
+const PrintReceipt = ({ data, logoUrl, user }) => {
+  return (
+    <div className="w-full flex flex-col items-center justify-center p-8 bg-white text-black min-h-screen font-sans border-8 border-double border-zinc-300">
+      <div className="max-w-2xl w-full">
+        <div className="text-center mb-10 border-b-4 border-black pb-8">
+          <img src={logoUrl} alt="Logo" className="h-32 w-auto mx-auto mb-6 object-contain" />
+          <h1 className="text-4xl font-black tracking-tighter uppercase mb-2">Recibo de Pagamento</h1>
+          <p className="text-lg font-bold text-zinc-500 uppercase tracking-widest">
+            {new Date(data.date).toLocaleString()}
+          </p>
+        </div>
+
+        <div className="space-y-6 text-xl mb-12">
+          <div className="flex justify-between border-b-2 border-zinc-100 pb-2">
+            <span className="font-bold text-zinc-500 uppercase tracking-widest">Cliente:</span>
+            <span className="font-black uppercase">{user?.displayName || user?.email}</span>
+          </div>
+          <div className="flex justify-between border-b-2 border-zinc-100 pb-2">
+            <span className="font-bold text-zinc-500 uppercase tracking-widest">Plano Assinado:</span>
+            <span className="font-black uppercase text-blue-600">{data.planName}</span>
+          </div>
+          <div className="flex justify-between border-b-2 border-zinc-100 pb-2">
+            <span className="font-bold text-zinc-500 uppercase tracking-widest">Valor Original:</span>
+            <span className="font-black uppercase">R$ {data.price.toFixed(2)}</span>
+          </div>
+          {data.discount > 0 && (
+            <div className="flex justify-between border-b-2 border-zinc-100 pb-2 text-green-600">
+              <span className="font-bold uppercase tracking-widest">Desconto (Cupom: {data.coupon}):</span>
+              <span className="font-black uppercase">- R$ {data.discount.toFixed(2)}</span>
+            </div>
+          )}
+          
+          <div className="flex justify-between bg-zinc-100 p-6 rounded-2xl mt-8 items-center border-2 border-black">
+            <span className="font-black text-2xl uppercase tracking-tighter">Total Pago:</span>
+            <span className="font-black text-4xl">R$ {data.finalPrice.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
+          <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">
+            Este documento comprova o acesso aos recursos Premium.<br/>Obrigado pela preferência!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PrintBoletim = ({ data, logoUrl, user }) => {
   const displayName = user?.displayName || 'SISTEMA OFICIAL';
@@ -348,7 +397,8 @@ const LoginScreen = ({ onGuestLogin }) => {
             name: name.toUpperCase(), 
             date: new Date().toISOString(),
             currentPlan: 'GRATUITO',
-            premiumUntil: null
+            premiumUntil: null,
+            premiumSince: null
         });
         localStorage.setItem('app_registered_users', JSON.stringify(existingUsers));
 
@@ -460,7 +510,7 @@ const LoginScreen = ({ onGuestLogin }) => {
 };
 
 // 3. Tela de Gestão do Evento (Dashboard)
-const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, onClearAll }) => {
+const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories, setCategories, fightHistory, onStartFight, onLogout, user, isPremium, logoUrl, setLogoUrl, onClearAll, triggerPrintReceipt }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [printMode, setPrintMode] = useState(null); 
@@ -529,6 +579,45 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
   }, [coupons, plans, isAdmin]);
 
+  // Drag and Drop Lógica
+  const handleDropFight = (e, targetFightId, catId = null) => {
+    e.preventDefault();
+    const sourceIdStr = e.dataTransfer.getData('text/plain');
+    if(!sourceIdStr) return;
+    const sourceId = Number(sourceIdStr);
+    
+    if (sourceId === targetFightId) return; // Dropou no mesmo lugar
+
+    if (!catId) {
+      // Reordenar Fila Livre
+      const newQueue = [...queue];
+      const sourceIdx = newQueue.findIndex(f => f.id === sourceId);
+      const targetIdx = newQueue.findIndex(f => f.id === targetFightId);
+      
+      if(sourceIdx !== -1 && targetIdx !== -1) {
+        const [removed] = newQueue.splice(sourceIdx, 1);
+        newQueue.splice(targetIdx, 0, removed);
+        setQueue(newQueue);
+      }
+    } else {
+      // Reordenar dentro da categoria
+      const newCats = [...categories];
+      const catIdx = newCats.findIndex(c => c.id === catId);
+      if (catIdx !== -1) {
+        const newFights = [...newCats[catIdx].fights];
+        const sourceIdx = newFights.findIndex(f => f.id === sourceId);
+        const targetIdx = newFights.findIndex(f => f.id === targetFightId);
+        
+        if (sourceIdx !== -1 && targetIdx !== -1) {
+           const [removed] = newFights.splice(sourceIdx, 1);
+           newFights.splice(targetIdx, 0, removed);
+           newCats[catIdx].fights = newFights;
+           setCategories(newCats);
+        }
+      }
+    }
+  };
+
   // Funções Admin - Cupons e Planos
   const handleAddCoupon = (e) => {
     e.preventDefault();
@@ -572,17 +661,21 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     e.preventDefault();
     
     let newPremiumUntil = null;
+    let newPremiumSince = editingAdminUser.premiumSince;
+
     if(editUserPlan !== 'GRATUITO') {
         const ms = Date.now() + (editUserDays * 24 * 60 * 60 * 1000);
         newPremiumUntil = ms;
+        newPremiumSince = newPremiumSince || Date.now();
         localStorage.setItem(`premiumUntil_${editingAdminUser.uid}`, ms);
     } else {
         localStorage.removeItem(`premiumUntil_${editingAdminUser.uid}`);
+        newPremiumSince = null;
     }
 
     const updated = registeredUsers.map(u => {
         if(u.uid === editingAdminUser.uid) {
-            return {...u, currentPlan: editUserPlan, premiumUntil: newPremiumUntil};
+            return {...u, currentPlan: editUserPlan, premiumUntil: newPremiumUntil, premiumSince: newPremiumSince};
         }
         return u;
     });
@@ -759,6 +852,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 
   const handlePayment = async (planName, price, durationDays) => {
     let finalPrice = price;
+    let appliedDiscount = 0;
     setCouponMessage({ text: '', type: '' });
 
     if (couponCode.trim() !== '') {
@@ -770,7 +864,8 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
             setCouponMessage({ text: `Este cupom só é válido para o plano: ${couponData.plan}`, type: 'error' });
             return;
         }
-        finalPrice = Number((price - (price * couponData.discount)).toFixed(2));
+        appliedDiscount = price * couponData.discount;
+        finalPrice = Number((price - appliedDiscount).toFixed(2));
       } else if (couponData && couponData.uses <= 0) {
         setCouponMessage({ text: 'Este cupom já atingiu o limite de usos.', type: 'error' });
         return;
@@ -781,8 +876,19 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
     }
 
     setIsProcessingPayment(true);
-    sessionStorage.setItem('pendingPlanDays', durationDays); 
+    sessionStorage.setItem('pendingPlanDays', durationDays);
+    sessionStorage.setItem('pendingPlanName', planName);
     
+    const receiptData = {
+        planName,
+        price,
+        discount: appliedDiscount,
+        finalPrice,
+        date: Date.now(),
+        coupon: couponCode.trim().toUpperCase() || 'Nenhum'
+    };
+    sessionStorage.setItem('pendingReceipt', JSON.stringify(receiptData));
+
     if (couponCode.trim() !== '') {
       sessionStorage.setItem('pendingUsedCoupon', couponCode.trim().toUpperCase());
     }
@@ -852,7 +958,25 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
           {grouped[dateStr].map((fight, index) => {
             const winner = fight.status === 'finished' ? getWinner(fight.result) : 0;
             return (
-              <div key={fight.id} className={`border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-colors ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'}`}>
+              <div 
+                key={fight.id} 
+                draggable={fight.status !== 'finished'}
+                onDragStart={(e) => {
+                   e.dataTransfer.setData('text/plain', fight.id.toString());
+                   e.currentTarget.classList.add('opacity-40', 'border-blue-500');
+                }}
+                onDragEnd={(e) => {
+                   e.currentTarget.classList.remove('opacity-40', 'border-blue-500');
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleDropFight(e, fight.id, catId)}
+                className={`border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-all ${fight.status === 'finished' ? 'border-green-900/50 bg-green-900/10' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'}`}
+              >
+                {/* Drag Handle */}
+                <div className={`hidden md:flex shrink-0 pr-2 ${fight.status === 'finished' ? 'opacity-0 cursor-default' : 'cursor-grab hover:text-white text-zinc-600 active:cursor-grabbing'}`}>
+                   <GripVertical size={20} />
+                </div>
+
                 <div className="hidden md:flex flex-col items-center justify-center px-4 border-r border-zinc-800/50 shrink-0">
                   <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">{fight.phase}</span>
                   <span className="text-zinc-400 font-black text-xl">#{index + 1}</span>
@@ -902,6 +1026,9 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
             <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
               <PrintBoletim data={{...printMode.data, ...printMode.data.result}} logoUrl={logoUrl} user={user} />
             </div>
+          )}
+          {printMode.type === 'receipt' && (
+            <PrintReceipt data={printMode.data} logoUrl={logoUrl} user={user} />
           )}
           {printMode.type === 'all' && (
             <div className="w-full">
@@ -1319,7 +1446,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                         <tr className="border-b border-zinc-800">
                           <th className="p-3 font-black uppercase text-zinc-500">Cadastro</th>
                           <th className="p-3 font-black uppercase text-zinc-500">Nome (Academia)</th>
-                          <th className="p-3 font-black uppercase text-zinc-500">Plano Atual</th>
+                          <th className="p-3 font-black uppercase text-zinc-500">Plano / Validade</th>
                           <th className="p-3 font-black uppercase text-zinc-500 text-right">Ação</th>
                         </tr>
                       </thead>
@@ -1336,7 +1463,13 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
                                   {u.name} <br/><span className="text-[10px] text-zinc-500 font-normal normal-case">{u.email}</span>
                                 </td>
                                 <td className="p-3 text-zinc-300 font-bold text-xs uppercase">
-                                  {isPremiumActive ? <span className="text-yellow-500">{u.currentPlan}</span> : <span className="text-zinc-500">GRATUITO</span>}
+                                  {isPremiumActive ? (
+                                    <>
+                                      <div className="text-yellow-500 mb-1">{u.currentPlan}</div>
+                                      <div className="text-[9px] text-zinc-500">Ativo: {u.premiumSince ? new Date(u.premiumSince).toLocaleDateString() : '-'}</div>
+                                      <div className="text-[9px] text-zinc-500">Expira: {new Date(u.premiumUntil).toLocaleDateString()}</div>
+                                    </>
+                                  ) : <span className="text-zinc-500 mt-2 block">GRATUITO</span>}
                                 </td>
                                 <td className="p-3 text-right">
                                   <button onClick={() => openAdminUserEdit(u)} className="p-2 bg-zinc-800 hover:bg-purple-600 hover:text-white rounded-lg transition-colors mr-2"><Edit2 size={14}/></button>
@@ -1754,6 +1887,7 @@ export default function App() {
   const [dashboardTab, setDashboardTab] = useState('queue'); 
   const [isLoading, setIsLoading] = useState(true);
   const [resetCode, setResetCode] = useState(null);
+  const [pendingReceipt, setPendingReceipt] = useState(null);
 
   const loadPremiumState = (uid) => {
     if (!uid) return false;
@@ -1817,16 +1951,34 @@ export default function App() {
       if (user) {
         setIsPremium(true);
         const pendingDays = parseInt(sessionStorage.getItem('pendingPlanDays')) || 30;
-        localStorage.setItem(`premiumUntil_${user.uid}`, Date.now() + (pendingDays * 24 * 60 * 60 * 1000));
+        const pendingPlanName = sessionStorage.getItem('pendingPlanName') || 'Premium';
+        const now = Date.now();
+        const until = now + (pendingDays * 24 * 60 * 60 * 1000);
         
-        // Remove completed coupon usage globally if needed (already decremented before redirect)
-        const usedCoupon = sessionStorage.getItem('pendingUsedCoupon');
-        if(usedCoupon) {
-           sessionStorage.removeItem('pendingUsedCoupon');
+        localStorage.setItem(`premiumUntil_${user.uid}`, until);
+        
+        // Atualiza a listagem de usuários do Admin com a Data de Ativação (premiumSince)
+        const usersList = JSON.parse(localStorage.getItem('app_registered_users') || '[]');
+        const updatedUsersList = usersList.map(u => {
+            if(u.uid === user.uid) {
+                return {...u, currentPlan: pendingPlanName, premiumUntil: until, premiumSince: now};
+            }
+            return u;
+        });
+        localStorage.setItem('app_registered_users', JSON.stringify(updatedUsersList));
+
+        // Carrega recibo e limpa sessão
+        const receiptStr = sessionStorage.getItem('pendingReceipt');
+        if (receiptStr) {
+           setPendingReceipt(JSON.parse(receiptStr));
         }
 
+        const usedCoupon = sessionStorage.getItem('pendingUsedCoupon');
+        if(usedCoupon) sessionStorage.removeItem('pendingUsedCoupon');
         sessionStorage.removeItem('pendingPlanDays');
-        alert("Pagamento aprovado! Bem-vindo ao Modo Premium.");
+        sessionStorage.removeItem('pendingPlanName');
+        sessionStorage.removeItem('pendingReceipt');
+        
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     } else if (paymentStatus === 'failure') {
@@ -1999,12 +2151,48 @@ export default function App() {
     }, 100);
   };
 
+  const triggerPrintReceipt = () => {
+    // Esconder outras coisas, simular print mode no dashboard, mas aqui é global
+    window.print();
+  };
+
   if (isLoading) {
     return <div className="min-h-screen bg-black text-white flex items-center justify-center font-black text-2xl tracking-widest uppercase">Carregando...</div>;
   }
 
   return (
     <>
+      {/* Modal de Recibo (Pós-Pagamento) */}
+      {pendingReceipt && (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 backdrop-blur-md print:bg-white print:p-0 print:block">
+          <div className="print:hidden max-w-lg w-full bg-white text-black p-8 rounded-3xl shadow-2xl relative border-4 border-zinc-200">
+             <button onClick={() => setPendingReceipt(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-black"><X size={24}/></button>
+             <div className="text-center mb-6">
+                <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
+                <h2 className="text-2xl font-black uppercase tracking-tighter">Pagamento Aprovado!</h2>
+                <p className="text-sm font-bold text-zinc-500 mt-1 uppercase">O seu recibo está pronto</p>
+             </div>
+             <div className="bg-zinc-50 p-4 rounded-xl mb-6 font-bold text-sm space-y-2 border border-zinc-200">
+                <div className="flex justify-between"><span className="text-zinc-500">Plano:</span> <span className="uppercase">{pendingReceipt.planName}</span></div>
+                <div className="flex justify-between"><span className="text-zinc-500">Valor Final:</span> <span>R$ {pendingReceipt.finalPrice.toFixed(2)}</span></div>
+             </div>
+             <div className="flex gap-3">
+                <button onClick={triggerPrintReceipt} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all">
+                  <Printer size={16}/> Imprimir Recibo
+                </button>
+                <button onClick={() => setPendingReceipt(null)} className="px-6 border border-zinc-300 hover:bg-zinc-100 text-black font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all">
+                  Fechar
+                </button>
+             </div>
+          </div>
+          
+          {/* Versão Real de Impressão */}
+          <div className="hidden print:block w-full min-h-screen">
+             <PrintReceipt data={pendingReceipt} logoUrl={logoUrl} user={user} />
+          </div>
+        </div>
+      )}
+
       {currentView === 'resetPassword' && (
         <ResetPasswordScreen oobCode={resetCode} />
       )}
