@@ -1521,6 +1521,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 };
 
 const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl, onFinishFight, user }) => {
+  const [zoom, setZoom] = useState(1);
   const [matchTime, setMatchTime] = useState(300);
   const [timeLeft, setTimeLeft] = useState(matchTime);
   const [isRunning, setIsRunning] = useState(false);
@@ -1635,7 +1636,7 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
          </div>
       </div>
 
-      <div className="flex flex-col min-h-screen print:hidden">
+      <div className="flex flex-col min-h-screen print:hidden" style={{ zoom: zoom }}>
         
         <div className={`p-4 md:p-6 flex items-center justify-between shadow-xl relative z-10 ${themeClasses.navBg}`}>
           
@@ -1675,7 +1676,14 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 w-1/3">
+          <div className="flex items-center justify-end gap-1 w-1/3">
+            {/* Botões de Zoom Discretos */}
+            <div className="hidden md:flex items-center opacity-30 hover:opacity-100 transition-opacity mr-2 bg-black/10 rounded-full px-2">
+               <button onClick={() => setZoom(z => Math.max(0.5, z - 0.05))} className={`p-2 rounded-full hover:scale-110 transition-transform ${themeClasses.labelColor}`} title="Diminuir Tela"><Minus size={14} /></button>
+               <span className={`text-[10px] font-black w-9 text-center cursor-pointer ${themeClasses.pointsColor}`} onClick={() => setZoom(1)} title="Restaurar">{Math.round(zoom * 100)}%</span>
+               <button onClick={() => setZoom(z => Math.min(1.5, z + 0.05))} className={`p-2 rounded-full hover:scale-110 transition-transform ${themeClasses.labelColor}`} title="Aumentar Tela"><Plus size={14} /></button>
+            </div>
+            
             <button onClick={() => { if (isPremium) { window.print() } else { alert("A impressão é um recurso Premium. Acesse a aba 'Minha Conta' para adquirir um plano.") } }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} ${!isPremium ? 'opacity-50' : ''}`} title="Imprimir Resultado">
               <Printer size={24} />
             </button>
