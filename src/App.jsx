@@ -1891,7 +1891,66 @@ export default function App() {
         const catIdx = newCats.findIndex(c => c.id === catId);
         if (catIdx !== -1) {
           const fIdx = newCats[catIdx].fights.findIndex(f => f.id === fightId);
-          if (fIdx !== -1) newCats[catIdx].fights[fIdx] = { ...newCats[catIdx].fights[fIdx], status: 'finished', result: scoreData };
+          if (fIdx !== -1) {
+            newCats[catIdx].fights[fIdx] = { ...newCats[catIdx].fights[fIdx], status: 'finished', result: scoreData };
+
+            // --- Lógica de Final Automática ---
+            const finishedFight = newCats[catIdx].fights[fIdx];
+            if (finishedFight.phase === 'SEMI-FINAL') {
+              const semiFinals = newCats[catIdx].fights.filter(f => f.phase === 'SEMI-FINAL' && f.status === 'finished');
+              const hasFinal = newCats[catIdx].fights.some(f => f.phase === 'FINAL');
+              
+              if (semiFinals.length === 2 && !hasFinal) {
+                const sf1 = semiFinals[0];
+                const sf2 = semiFinals[1];
+                const w1Code = getWinner(sf1.result);
+                const w2Code = getWinner(sf2.result);
+                
+                if (w1Code !== 0 && w2Code !== 0) {
+                  const getWinnerDetails = (f, code) => code === 1 ? { name: f.f1Name, team: f.f1Team } : { name: f.f2Name, team: f.f2Team };
+                  const getLoserDetails = (f, code) => code === 1 ? { name: f.f2Name, team: f.f2Team } : { name: f.f1Name, team: f.f1Team };
+                  
+                  const w1 = getWinnerDetails(sf1, w1Code);
+                  const w2 = getWinnerDetails(sf2, w2Code);
+                  const l1 = getLoserDetails(sf1, w1Code);
+                  const l2 = getLoserDetails(sf2, w2Code);
+
+                  const baseProps = {
+                    date: sf1.date || new Date().toISOString().split('T')[0],
+                    category: sf1.category,
+                    belt: sf1.belt,
+                    gender: sf1.gender,
+                    status: 'pending'
+                  };
+                  
+                  // 1. Gerar Disputa do 3º Lugar (Perdedores)
+                  newCats[catIdx].fights.push({
+                    ...baseProps,
+                    id: Date.now() + 1,
+                    phase: 'DISPUTA 3º LUGAR',
+                    f1Name: l1.name,
+                    f1Team: l1.team,
+                    f2Name: l2.name,
+                    f2Team: l2.team
+                  });
+
+                  // 2. Gerar Grande Final (Vencedores)
+                  newCats[catIdx].fights.push({
+                    ...baseProps,
+                    id: Date.now() + 2,
+                    phase: 'FINAL',
+                    f1Name: w1.name,
+                    f1Team: w1.team,
+                    f2Name: w2.name,
+                    f2Team: w2.team
+                  });
+
+                  setTimeout(() => alert("A Grande Final e a Disputa do 3º Lugar foram geradas automaticamente!"), 300);
+                }
+              }
+            }
+            // --- Fim Lógica ---
+          }
         }
         return newCats;
       });
