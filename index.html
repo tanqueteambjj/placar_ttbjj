@@ -2,8 +2,6 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    
-    <!-- Ícone da aba do navegador (Favicon) com a logo da academia -->
     <link rel="icon" type="image/png" href="https://iili.io/qC543c7.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
@@ -11,12 +9,30 @@
     <title>Placar de Jiu-Jitsu Profissional | Tanque Team BJJ</title>
     <meta name="description" content="Sistema de placar oficial para campeonatos de Jiu-Jitsu. Gestão de chaves, fila de lutas, pontuação e emissão de boletins online.">
     <meta name="keywords" content="jiu-jitsu, bjj, placar, campeonato, tanque team, artes marciais">
+
+    <!-- === CARREGA O VISUAL (TAILWIND CSS) === -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- === ESTILOS PARA IMPRESSÃO DE BOLETINS === -->
+    <style>
+        @media print {
+            @page {
+                size: auto;
+                margin: 0mm;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                background-color: white !important;
+            }
+        }
+    </style>
   </head>
-  <body>
-    <!-- ESTA DIV É OBRIGATÓRIA PARA O REACT FUNCIONAR -->
+  <body class="bg-zinc-950 text-white">
+    <!-- ONDE O PLACAR VAI APARECER -->
     <div id="root"></div>
     
-    <!-- ESTE SCRIPT CARREGA O SEU CÓDIGO REACT -->
+    <!-- SCRIPT DE LIGAÇÃO AO REACT -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
