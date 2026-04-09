@@ -1088,8 +1088,8 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         {/* Modal Perfil e Admin User Edit*/}
         {editingAdminUser && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="max-w-md w-full bg-zinc-900 border border-purple-500/50 rounded-3xl p-8 relative shadow-2xl">
-              <button onClick={() => setEditingAdminUser(null)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+            <div className="max-w-md w-full bg-zinc-900 border border-purple-500/50 rounded-3xl p-6 md:p-8 relative shadow-2xl overflow-y-auto max-h-[90vh]">
+              <button onClick={() => setEditingAdminUser(null)} className="absolute top-4 right-4 md:top-6 md:right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
               <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2 flex items-center gap-2"><User size={24} className="text-purple-500"/> Editar Usuário</h2>
               <p className="text-zinc-400 font-bold text-sm uppercase tracking-widest">{editingAdminUser.name}</p>
               <p className="text-zinc-500 text-xs mb-6">{editingAdminUser.email}</p>
@@ -1124,8 +1124,8 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
 
         {showProfileModal && !editingAdminUser && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative shadow-2xl">
-              <button onClick={() => setShowProfileModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+            <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 relative shadow-2xl overflow-y-auto max-h-[90vh]">
+              <button onClick={() => setShowProfileModal(false)} className="absolute top-4 right-4 md:top-6 md:right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
               <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><User size={32} className="text-white" /></div>
                 <h2 className="text-2xl font-black text-white uppercase tracking-tighter">O Meu Perfil</h2>
@@ -1196,8 +1196,8 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         {/* Modal Pagamento */}
         {showPaymentModal && !isPremium && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm overflow-y-auto">
-            <div className="max-w-6xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative my-8">
-              <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
+            <div className="max-w-6xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl relative my-8">
+              <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 md:top-6 md:right-6 text-zinc-400 hover:text-white"><X size={32}/></button>
               <div className="text-center mb-8">
                 <Crown size={48} className="text-yellow-500 mx-auto mb-4" />
                 <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Desbloquear Premium</h2>
@@ -1247,8 +1247,8 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         {/* Modal CRUD Categoria */}
         {showCategoryModal && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative">
-              <button onClick={() => setShowCategoryModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+            <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 relative overflow-y-auto max-h-[90vh]">
+              <button onClick={() => setShowCategoryModal(false)} className="absolute top-4 right-4 md:top-6 md:right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
               <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><FolderPlus size={24}/> {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}</h2>
               <form onSubmit={handleSaveCategory} className="space-y-4">
                 <div>
@@ -1276,8 +1276,8 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         {/* Modal CRUD Luta */}
         {showFightModal && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="max-w-lg w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 relative overflow-y-auto max-h-screen">
-              <button onClick={() => setShowFightModal(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
+            <div className="max-w-lg w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 relative overflow-y-auto max-h-[90vh]">
+              <button onClick={() => setShowFightModal(false)} className="absolute top-4 right-4 md:top-6 md:right-6 text-zinc-400 hover:text-white"><X size={24}/></button>
               <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-2"><GitMerge size={24}/> {editingFight ? 'Editar Luta' : 'Adicionar Luta'}</h2>
               <form onSubmit={handleSaveFight} className="space-y-4">
                 
