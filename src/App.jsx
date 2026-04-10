@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Users, Package, Mail, GripVertical } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Users, Package, Mail, GripVertical, ArrowRight, LayoutDashboard, MonitorPlay } from 'lucide-react';
 
 // === CONFIGURAÇÃO DO FIREBASE ===
 import { initializeApp } from "firebase/app";
@@ -74,6 +74,137 @@ const getWinner = (res) => {
 };
 
 // === COMPONENTES DA INTERFACE ===
+
+const LandingScreen = ({ onLogin, onRegister, onDemo, plans, logoUrl }) => {
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white font-sans overflow-x-hidden">
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 p-6 z-50 flex justify-between items-center max-w-7xl mx-auto">
+        <div className="flex items-center gap-3">
+          <img src={logoUrl} alt="Logo" className="h-12 md:h-16 w-auto object-contain drop-shadow-2xl" />
+          <span className="font-black text-xl tracking-tighter uppercase hidden md:block bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">Tanque Team BJJ</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <button onClick={onLogin} className="text-zinc-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Entrar</button>
+          <button onClick={onRegister} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95">Criar Conta</button>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="relative pt-40 pb-20 md:pt-52 md:pb-32 px-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black overflow-hidden flex flex-col items-center justify-center min-h-[90vh]">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-yellow-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900 border border-zinc-800 mb-8">
+             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Sistema Oficial de Campeonatos</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase mb-6 leading-[1.1] text-white drop-shadow-2xl">
+            Eleve o nível do seu <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-300">Jiu-Jitsu</span>
+          </h1>
+          <p className="text-lg md:text-xl text-zinc-400 mb-10 max-w-2xl mx-auto font-medium">
+            A plataforma definitiva para organizar chaves, gerir filas de lutas, controlar placares em tempo real e emitir boletins com a sua própria marca.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button onClick={onRegister} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] active:scale-95 flex items-center justify-center gap-2">
+              Começar Gratuitamente <ArrowRight size={16} />
+            </button>
+            <button onClick={onDemo} className="w-full sm:w-auto bg-zinc-900 border border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800 text-white px-8 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2">
+              <MonitorPlay size={16} /> Experimentar Placar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-24 px-4 bg-black border-y border-zinc-900 relative">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-zinc-950 border border-zinc-800 p-8 rounded-3xl hover:border-blue-500/50 transition-colors group">
+            <div className="w-14 h-14 bg-blue-900/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <LayoutDashboard className="text-blue-500" size={28} />
+            </div>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-3">Gestão de Chaves</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed">Crie categorias por faixa e peso. O sistema gera automaticamente as finais e as disputas de 3º lugar com base nos vencedores.</p>
+          </div>
+          
+          <div className="bg-zinc-950 border border-zinc-800 p-8 rounded-3xl hover:border-yellow-500/50 transition-colors group">
+            <div className="w-14 h-14 bg-yellow-900/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Trophy className="text-yellow-500" size={28} />
+            </div>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-3">Placar Profissional</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed">Controlo completo de Pontos, Vantagens e Punições. Design moderno, adaptável a qualquer ecrã e projetado para não falhar.</p>
+          </div>
+
+          <div className="bg-zinc-950 border border-zinc-800 p-8 rounded-3xl hover:border-purple-500/50 transition-colors group">
+            <div className="w-14 h-14 bg-purple-900/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Printer className="text-purple-500" size={28} />
+            </div>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-3">Relatórios Oficiais</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed">Imprima boletins de luta individuais ou relatórios completos do evento com a logo da sua própria academia.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-24 px-4 bg-zinc-950 relative">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4 text-white">Planos e Preços</h2>
+          <p className="text-zinc-400 max-w-xl mx-auto">Comece a testar sem custos ou desbloqueie o poder total para o seu próximo campeonato.</p>
+        </div>
+
+        <div className={`grid md:grid-cols-${Math.min(plans.length + 1, 3)} gap-8 max-w-6xl mx-auto`}>
+          {/* Free Plan */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col relative opacity-80 hover:opacity-100 transition-opacity">
+            <div className="mb-4">
+              <h3 className="text-2xl font-black uppercase text-zinc-300">Visitante</h3>
+              <p className="text-zinc-500 font-bold text-sm uppercase">Acesso Imediato</p>
+            </div>
+            <div className="text-5xl font-black mb-8 text-zinc-300">Grátis</div>
+            <ul className="space-y-4 text-sm text-zinc-400 font-medium mb-8 flex-1">
+              <li className="flex items-center gap-3"><CheckCircle size={16} className="text-zinc-600"/> Testar Placar de Luta</li>
+              <li className="flex items-center gap-3"><CheckCircle size={16} className="text-zinc-600"/> Regras Oficiais</li>
+              <li className="flex items-center gap-3 text-zinc-600 line-through"><X size={16}/> Histórico e Filas</li>
+              <li className="flex items-center gap-3 text-zinc-600 line-through"><X size={16}/> Impressão de Boletins</li>
+            </ul>
+            <button onClick={onDemo} className="w-full font-black py-4 rounded-xl border-2 border-zinc-700 text-zinc-300 hover:bg-zinc-800 uppercase tracking-widest transition-all">
+              Testar Agora
+            </button>
+          </div>
+
+          {/* Premium Plans from State */}
+          {plans.map(plan => (
+            <div key={plan.id} className={`bg-zinc-900 border-2 ${plan.isPopular ? 'border-blue-500 shadow-[0_0_40px_rgba(37,99,235,0.15)]' : 'border-zinc-800'} rounded-3xl p-8 flex flex-col relative scale-100 md:scale-105 z-10 bg-gradient-to-b from-zinc-900 to-black`}>
+              {plan.isPopular && <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">O Mais Escolhido</div>}
+              <div className="mb-4 mt-2">
+                <h3 className={`text-2xl font-black uppercase ${plan.isPopular ? 'text-blue-400' : 'text-yellow-500'}`}>{plan.name}</h3>
+                <p className="text-zinc-500 font-bold text-sm uppercase">Válido por {plan.durationDays} Dias</p>
+              </div>
+              <div className="text-5xl font-black mb-8 text-white">R$ {plan.price}<span className="text-2xl text-zinc-500">,00</span></div>
+              <ul className="space-y-4 text-sm text-zinc-300 font-medium mb-8 flex-1">
+                {plan.features.split(',').map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <CheckCircle size={18} className={plan.isPopular ? 'text-blue-500 shrink-0' : 'text-yellow-500 shrink-0'}/> 
+                    <span className="leading-tight">{feature.trim()}</span>
+                  </li>
+                ))}
+              </ul>
+              <button onClick={onRegister} className={`w-full font-black py-4 rounded-xl shadow-lg uppercase tracking-widest transition-all active:scale-95 ${plan.isPopular ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-yellow-500 hover:bg-yellow-400 text-black'}`}>
+                Criar Conta Premium
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="py-8 text-center text-zinc-600 text-xs font-bold uppercase tracking-widest border-t border-zinc-900 bg-black">
+        &copy; {new Date().getFullYear()} Tanque Team BJJ. Todos os direitos reservados.
+      </footer>
+    </div>
+  );
+};
 
 const PrintReceipt = ({ data, logoUrl, user }) => {
   return (
@@ -353,12 +484,12 @@ const ResetPasswordScreen = ({ oobCode }) => {
   );
 };
 
-const LoginScreen = ({ onGuestLogin }) => {
+const LoginScreen = ({ onBack, initialIsRegistering = false }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(initialIsRegistering);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -414,6 +545,11 @@ const LoginScreen = ({ onGuestLogin }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black p-4 relative overflow-hidden">
+      
+      <button onClick={onBack} className="absolute top-6 left-6 text-zinc-400 hover:text-white flex items-center gap-2 text-xs font-bold uppercase tracking-widest z-50 transition-colors">
+        <ChevronLeft size={16}/> Voltar
+      </button>
+
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -495,12 +631,9 @@ const LoginScreen = ({ onGuestLogin }) => {
         </form>
 
         {!isResettingPassword && (
-          <div className="mt-8 flex flex-col gap-4">
+          <div className="mt-8 text-center">
             <button onClick={() => { setIsRegistering(!isRegistering); setError(''); setSuccessMsg(''); }} disabled={isLoading} className="text-zinc-400 hover:text-blue-400 text-xs font-black uppercase tracking-widest transition-colors">
               {isRegistering ? 'Já tenho conta. Fazer Login' : 'Não tem conta? Registre-se'}
-            </button>
-            <button onClick={onGuestLogin} disabled={isLoading} className="text-zinc-600 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-zinc-800/50 py-3 rounded-xl bg-zinc-950/30">
-              <LogIn size={12} /> Testar Modo Gratuito
             </button>
           </div>
         )}
@@ -1329,31 +1462,31 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
         )}
 
         {/* HEADER GERAL */}
-        <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-zinc-800 pb-6 pt-4 md:pt-8">
+        <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 border-b border-zinc-800 pb-6 pt-4 md:pt-8 px-4 md:px-0">
           <div className="flex items-center gap-4">
             <label onClick={(e) => { if(!isPremium) triggerPremiumModal(e); }} className="relative group cursor-pointer block">
-              <img src={logoUrl} alt="Logo" className="h-16 w-auto drop-shadow-lg object-contain bg-white/10 rounded" />
+              <img src={logoUrl} alt="Logo" className="h-12 md:h-16 w-auto drop-shadow-lg object-contain bg-white/10 rounded" />
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded transition-opacity"><ImagePlus className="text-white" size={24} /></div>
               <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={!isPremium} />
               {!isPremium && <div className="absolute -bottom-2 -right-2 bg-yellow-500 text-black p-1 rounded-full"><Lock size={10} /></div>}
             </label>
             <div>
-              <h1 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-2">Painel de Evento {isPremium ? <Crown size={20} className="text-yellow-500" /> : <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded-full">GRATUITO</span>}</h1>
-              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">{user?.email}</p>
+              <h1 className="text-xl md:text-2xl font-black tracking-tighter uppercase flex items-center gap-2">Painel de Evento {isPremium ? <Crown size={20} className="text-yellow-500" /> : <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded-full">GRATUITO</span>}</h1>
+              <p className="text-zinc-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">{user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <button onClick={() => setShowProfileModal(true)} className="text-zinc-400 hover:text-white font-bold text-xs uppercase transition-colors flex items-center gap-2">
+          <div className="flex items-center gap-4 md:gap-6">
+            <button onClick={() => setShowProfileModal(true)} className="text-zinc-400 hover:text-white font-bold text-[10px] md:text-xs uppercase transition-colors flex items-center gap-2">
               <User size={16} /> <span className="hidden md:inline">A Minha Conta</span>
             </button>
-            <button onClick={onLogout} className="text-zinc-500 hover:text-red-500 font-bold text-xs uppercase transition-colors flex items-center gap-2 border-l border-zinc-800 pl-6">
+            <button onClick={onLogout} className="text-zinc-500 hover:text-red-500 font-bold text-[10px] md:text-xs uppercase transition-colors flex items-center gap-2 border-l border-zinc-800 pl-4 md:pl-6">
               <LogOut size={16} /> <span className="hidden md:inline">Sair</span>
             </button>
           </div>
         </header>
 
         {/* MAIN CONTENT DO DASHBOARD */}
-        <main className="max-w-6xl mx-auto pb-20">
+        <main className="max-w-6xl mx-auto pb-20 px-4 md:px-0">
           
           <nav className="flex flex-wrap gap-4 md:gap-6 mb-8 border-b border-zinc-800">
             <button onClick={() => setActiveTab('queue')} className={`pb-3 font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'queue' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-600 hover:text-zinc-400'}`}>Fila Livre</button>
@@ -1424,14 +1557,14 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
           {activeTab === 'admin' && isAdmin && (
             <div className="space-y-6">
               {/* SubNavegação Admin */}
-              <div className="flex gap-4 border-b border-zinc-800/50 mb-6">
-                 <button onClick={() => setAdminSubTab('plans')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'plans' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Planos Premium</button>
-                 <button onClick={() => setAdminSubTab('users')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'users' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Usuários</button>
-                 <button onClick={() => setAdminSubTab('coupons')} className={`pb-2 text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'coupons' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Cupons</button>
+              <div className="flex flex-wrap gap-4 border-b border-zinc-800/50 mb-6">
+                 <button onClick={() => setAdminSubTab('plans')} className={`pb-2 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'plans' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Planos Premium</button>
+                 <button onClick={() => setAdminSubTab('users')} className={`pb-2 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'users' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Usuários</button>
+                 <button onClick={() => setAdminSubTab('coupons')} className={`pb-2 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors ${adminSubTab === 'coupons' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-zinc-600 hover:text-zinc-400'}`}>Cupons</button>
               </div>
 
               {adminSubTab === 'plans' && (
-                <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden">
+                <div className="bg-zinc-900 border border-purple-500/30 p-4 md:p-8 rounded-3xl relative overflow-hidden">
                   <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-purple-400"><Package size={24}/> Gerir Planos de Subscrição</h2>
                   <form onSubmit={handleAddPlan} className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 space-y-4">
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1477,7 +1610,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
               )}
 
               {adminSubTab === 'users' && (
-                <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden">
+                <div className="bg-zinc-900 border border-purple-500/30 p-4 md:p-8 rounded-3xl relative overflow-hidden">
                   <h2 className="text-xl font-black uppercase tracking-tighter mb-2 flex items-center gap-2 text-purple-400"><Users size={24}/> Gestão de Usuários (Local)</h2>
                   <p className="text-xs text-zinc-500 mb-6">Esta lista mostra as contas e planos ativos. O sistema envia links oficiais de recuperação pelo Firebase.</p>
                   
@@ -1527,7 +1660,7 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
               )}
 
               {adminSubTab === 'coupons' && (
-                <div className="bg-zinc-900 border border-purple-500/30 p-8 rounded-3xl relative overflow-hidden">
+                <div className="bg-zinc-900 border border-purple-500/30 p-4 md:p-8 rounded-3xl relative overflow-hidden">
                   <h2 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2 text-purple-400"><Tag size={24}/> Gestão de Cupons de Desconto (Admin)</h2>
                   <form onSubmit={handleAddCoupon} className="flex flex-col md:flex-row gap-4 items-end bg-zinc-950 p-6 rounded-2xl border border-zinc-800">
                      <div className="flex-1 w-full md:w-auto">
@@ -1580,17 +1713,17 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
           {/* TAB: FILA DE LUTAS GERAL */}
           {activeTab === 'queue' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-3 flex justify-between items-center bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
+              <div className="lg:col-span-3 flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900 border border-zinc-800 p-6 rounded-3xl gap-4">
                 <div>
                   <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 text-zinc-100"><ListOrdered size={24} className="text-blue-500"/> Fila Livre (Lutas Individuais)</h2>
                   <p className="text-sm text-zinc-500 mt-1">Adicione lutas rápidas fora de uma chave estruturada.</p>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={() => onStartFight(null)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg transition-all">
+                <div className="flex gap-3 w-full md:w-auto">
+                  <button onClick={() => onStartFight(null)} className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all">
                     Placar Avulso {!isPremium && <span className="bg-black/20 px-2 py-0.5 rounded text-[9px] ml-1">GRÁTIS</span>}
                   </button>
-                  <button onClick={() => openFightModal('add')} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg transition-all">
-                    <Plus size={16}/> Adicionar Luta
+                  <button onClick={() => openFightModal('add')} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all">
+                    <Plus size={16}/> Luta
                   </button>
                 </div>
               </div>
@@ -1694,13 +1827,14 @@ const DashboardScreen = ({ activeTab, setActiveTab, queue, setQueue, categories,
   );
 };
 
-const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl, onFinishFight, user }) => {
+const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl, onFinishFight, user, onRegisterRequest }) => {
   const [zoom, setZoom] = useState(1);
   const [matchTime, setMatchTime] = useState(300);
   const [timeLeft, setTimeLeft] = useState(matchTime);
   const [isRunning, setIsRunning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showDemoAlert, setShowDemoAlert] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   
   const [category, setCategory] = useState(initialFightData?.category || '');
@@ -1713,6 +1847,8 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
   
   const [fighter1, setFighter1] = useState(initialFighter1);
   const [fighter2, setFighter2] = useState(initialFighter2);
+
+  const isDemo = user?.isDemo === true;
 
   useEffect(() => {
     if(initialFightData) {
@@ -1768,6 +1904,11 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
   const toggleTimer = () => setIsRunning(!isRunning);
 
   const handleCompleteFight = (action) => {
+    if (isDemo) {
+      setShowFinishModal(false);
+      setShowDemoAlert(true);
+      return;
+    }
     const scoreData = { category, belt, gender, phase, duration: matchTime / 60, f1: { ...fighter1 }, f2: { ...fighter2 } };
     onFinishFight(initialFightData?.catId, initialFightData?.id, scoreData, action);
     setShowFinishModal(false);
@@ -1804,6 +1945,28 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
   return (
     <div className={`min-h-screen flex flex-col font-sans select-none transition-colors duration-500 ${themeClasses.appBg}`}>
       
+      {/* Modal de Aviso Demo */}
+      {showDemoAlert && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md print:hidden">
+          <div className="max-w-md w-full bg-zinc-900 text-white p-8 rounded-3xl shadow-2xl relative border border-zinc-800 text-center">
+            <button onClick={() => setShowDemoAlert(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={24}/></button>
+            <Crown size={48} className="mx-auto text-yellow-500 mb-4" />
+            <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">Desbloqueie o Placar</h2>
+            <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+              Está a usar o modo de teste. Crie uma conta gratuita agora mesmo para alterar as configurações de tempo, imprimir boletins e gerir o seu campeonato completo!
+            </p>
+            <div className="flex flex-col gap-3">
+              <button onClick={onRegisterRequest} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest transition-all">
+                Criar Conta Gratuita
+              </button>
+              <button onClick={() => setShowDemoAlert(false)} className="w-full border border-zinc-700 hover:bg-zinc-800 text-zinc-300 font-bold py-3 rounded-xl uppercase tracking-widest text-xs transition-all">
+                Continuar a Testar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="hidden print:flex flex-col p-4 w-full min-h-screen">
          <div className="border-[8px] border-double border-zinc-300 p-4 flex-1 flex flex-col">
            <PrintBoletim data={{ category, belt, gender, phase, duration: matchTime / 60, f1: fighter1, f2: fighter2 }} logoUrl={user?.logoUrl || logoUrl} user={user} />
@@ -1816,7 +1979,7 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
           
           <div className="hidden xl:flex items-center gap-6 w-1/3">
             <button onClick={onBackToQueue} className="p-3 rounded-xl flex items-center gap-2 font-bold tracking-widest text-xs uppercase transition-all text-zinc-500 hover:text-white hover:bg-zinc-800">
-              <ChevronLeft size={16} /> Fila
+              <ChevronLeft size={16} /> {isDemo ? 'Sair' : 'Fila'}
             </button>
             <div className="flex items-center border-l border-zinc-800 pl-6 py-1">
                <img src={logoUrl} alt="Logo" className="h-20 md:h-24 w-auto object-contain mr-6 drop-shadow-lg" />
@@ -1831,7 +1994,8 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
             </div>
           </div>
 
-          <div className="flex-1 flex justify-center items-center gap-8 md:gap-16">
+          <div className="flex-1 flex justify-center items-center gap-8 md:gap-16 relative">
+            {isDemo && <div className="absolute -top-6 bg-yellow-500 text-black px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Modo Demonstração</div>}
             <div className={`text-9xl md:text-[14rem] leading-none font-black tabular-nums tracking-tighter ${timeLeft === 0 ? 'text-blue-500 animate-pulse' : themeClasses.pointsColor}`}>
               {formatTime(timeLeft)}
             </div>
@@ -1858,15 +2022,15 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
                <button onClick={() => setZoom(z => Math.min(1.5, z + 0.05))} className={`p-2 rounded-full hover:scale-110 transition-transform ${themeClasses.labelColor}`} title="Aumentar Tela"><Plus size={14} /></button>
             </div>
             
-            <button onClick={() => { if (isPremium) { window.print() } else { alert("A impressão é um recurso Premium. Acesse a aba 'Minha Conta' para adquirir um plano.") } }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} ${!isPremium ? 'opacity-50' : ''}`} title="Imprimir Resultado">
+            <button onClick={() => { if (isDemo) { setShowDemoAlert(true); return; } if (isPremium) { window.print() } else { alert("A impressão é um recurso Premium. Acesse a aba 'Minha Conta' para adquirir um plano.") } }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} ${!isPremium && !isDemo ? 'opacity-50' : ''}`} title="Imprimir Resultado">
               <Printer size={24} />
             </button>
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Tema"><Sun size={24} className={isDarkMode ? 'hidden' : 'block'} /><Moon size={24} className={isDarkMode ? 'block' : 'hidden'} /></button>
-            <button onClick={() => setShowSettings(!showSettings)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Ajustes de Tempo"><Settings size={24} /></button>
+            <button onClick={() => { if (isDemo) { setShowDemoAlert(true); return; } setShowSettings(!showSettings) }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Ajustes de Tempo"><Settings size={24} /></button>
           </div>
         </div>
 
-        {showSettings && (
+        {showSettings && !isDemo && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setShowSettings(false)}></div>
             <div className={`absolute top-36 right-8 border border-zinc-800 p-8 rounded-3xl shadow-2xl z-20 w-80 ${themeClasses.menuBg}`}>
@@ -1888,27 +2052,43 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
             <div className={`max-w-lg w-full p-10 rounded-3xl shadow-2xl text-center border border-zinc-800 ${themeClasses.menuBg}`}>
               <div className="flex justify-center mb-6"><CheckCircle size={64} className="text-blue-500" /></div>
               <h2 className="text-3xl font-black mb-2 tracking-tighter uppercase">Luta Encerrada</h2>
-              <p className="text-zinc-400 mb-8 text-sm uppercase tracking-widest font-bold">O que deseja fazer com o resultado?</p>
               
-              <div className="flex flex-col gap-3">
-                {isPremium ? (
-                  <>
-                    <button onClick={() => handleCompleteFight('next')} className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white transition-all">
-                      Salvar e Puxar Próxima Luta
+              {isDemo ? (
+                 <>
+                   <p className="text-zinc-400 mb-8 text-sm uppercase tracking-widest font-bold">Crie uma conta para salvar no histórico.</p>
+                   <div className="flex flex-col gap-3">
+                     <button onClick={onRegisterRequest} className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white transition-all">
+                        Criar Conta Gratuita
+                     </button>
+                     <button onClick={() => {setShowFinishModal(false); executeLocalReset();}} className="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest bg-transparent border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all mt-2">
+                        Testar Novamente
+                     </button>
+                   </div>
+                 </>
+              ) : (
+                <>
+                  <p className="text-zinc-400 mb-8 text-sm uppercase tracking-widest font-bold">O que deseja fazer com o resultado?</p>
+                  <div className="flex flex-col gap-3">
+                    {isPremium ? (
+                      <>
+                        <button onClick={() => handleCompleteFight('next')} className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white transition-all">
+                          Salvar e Puxar Próxima Luta
+                        </button>
+                        <button onClick={() => handleCompleteFight('queue')} className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${themeClasses.menuBtn}`}>
+                          Salvar e Voltar à Fila
+                        </button>
+                      </>
+                    ) : (
+                      <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-xs text-zinc-500 mb-4">
+                        O salvamento no histórico e passagem automática de fila são recursos <span className="text-yellow-500">Premium</span>.
+                      </div>
+                    )}
+                    <button onClick={() => {setShowFinishModal(false); onBackToQueue();}} className="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest bg-transparent border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all mt-2">
+                      Sair sem Salvar
                     </button>
-                    <button onClick={() => handleCompleteFight('queue')} className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${themeClasses.menuBtn}`}>
-                      Salvar e Voltar à Fila
-                    </button>
-                  </>
-                ) : (
-                  <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-xs text-zinc-500 mb-4">
-                    O salvamento no histórico e passagem automática de fila são recursos <span className="text-yellow-500">Premium</span>.
                   </div>
-                )}
-                <button onClick={() => {setShowFinishModal(false); onBackToQueue();}} className="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest bg-transparent border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all mt-2">
-                  Sair sem Salvar
-                </button>
-              </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -1924,11 +2104,24 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
 
 export default function App() {
   const [user, setUser] = useState(null);
-  const [currentView, setCurrentView] = useState('login'); 
+  
+  // Padrão de view alterado para 'landing' em vez de 'login'
+  const [currentView, setCurrentView] = useState('landing'); 
+  const [loginInitialRegister, setLoginInitialRegister] = useState(false);
+  
   const [dashboardTab, setDashboardTab] = useState('queue'); 
   const [isLoading, setIsLoading] = useState(true);
   const [resetCode, setResetCode] = useState(null);
   const [pendingReceipt, setPendingReceipt] = useState(null);
+
+  const defaultPlans = [
+    { id: 1, name: 'Passe Torneio', durationDays: 3, price: 15, isPopular: false, features: 'Ideal para Campeonatos de Fim de Semana,Todas as funções desbloqueadas,Sem renovação automática' },
+    { id: 2, name: 'Plano Mensal', durationDays: 30, price: 30, isPopular: true, features: 'Perfeito para Academias e Treinos Diários,Histórico ilimitado guardado no sistema,Sua própria Logo no Placar e PDFs' }
+  ];
+  const [plans, setPlans] = useState(() => {
+    const saved = localStorage.getItem('app_plans');
+    return saved ? JSON.parse(saved) : defaultPlans;
+  });
 
   const loadPremiumState = (uid) => {
     if (!uid) return false;
@@ -1983,7 +2176,7 @@ export default function App() {
        setResetCode(actionCode);
        setCurrentView('resetPassword');
        setIsLoading(false);
-       return; // Pausa aqui para não passar pelo processo de login
+       return; 
     }
 
     const paymentStatus = urlParams.get('payment');
@@ -1998,7 +2191,6 @@ export default function App() {
         
         localStorage.setItem(`premiumUntil_${user.uid}`, until);
         
-        // Atualiza a listagem de usuários do Admin com a Data de Ativação (premiumSince)
         const usersList = JSON.parse(localStorage.getItem('app_registered_users') || '[]');
         const updatedUsersList = usersList.map(u => {
             if(u.uid === user.uid) {
@@ -2008,7 +2200,6 @@ export default function App() {
         });
         localStorage.setItem('app_registered_users', JSON.stringify(updatedUsersList));
 
-        // Carrega recibo e limpa sessão
         const receiptStr = sessionStorage.getItem('pendingReceipt');
         if (receiptStr) {
            setPendingReceipt(JSON.parse(receiptStr));
@@ -2028,9 +2219,8 @@ export default function App() {
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      
       if (currentUser) {
+        setUser(currentUser);
         let premium = false;
         if (ADMIN_EMAILS.includes(currentUser.email)) {
           premium = true;
@@ -2050,9 +2240,13 @@ export default function App() {
           setFightHistory([]);
         }
         
-        setCurrentView(prev => prev === 'login' || prev === 'resetPassword' ? 'queue' : prev);
+        setCurrentView(prev => prev === 'login' || prev === 'resetPassword' || prev === 'landing' ? 'queue' : prev);
       } else {
-        setCurrentView('login');
+        // Se já estava no modo demo, não o força a voltar para a landing (permite continuar a testar)
+        if (user?.isDemo !== true) {
+           setUser(null);
+           setCurrentView('landing');
+        }
       }
       setIsLoading(false);
     });
@@ -2066,7 +2260,7 @@ export default function App() {
     setCategories([]);
     setQueue([]);
     setFightHistory([]);
-    setCurrentView('login');
+    setCurrentView('landing');
   };
 
   const startFight = (fightData) => {
@@ -2193,7 +2387,6 @@ export default function App() {
   };
 
   const triggerPrintReceipt = () => {
-    // Esconder outras coisas, simular print mode no dashboard, mas aqui é global
     window.print();
   };
 
@@ -2234,12 +2427,30 @@ export default function App() {
         </div>
       )}
 
+      {currentView === 'landing' && (
+        <LandingScreen 
+           logoUrl={logoUrl}
+           plans={plans}
+           onLogin={() => { setLoginInitialRegister(false); setCurrentView('login'); }}
+           onRegister={() => { setLoginInitialRegister(true); setCurrentView('login'); }}
+           onDemo={() => {
+              setUser({ email: 'Demo Mode', isDemo: true });
+              setActiveFight(null);
+              setCurrentView('scoreboard');
+           }}
+        />
+      )}
+
       {currentView === 'resetPassword' && (
         <ResetPasswordScreen oobCode={resetCode} />
       )}
 
       {currentView === 'login' && (
-        <LoginScreen onGuestLogin={() => { setUser({ email: 'Conta Gratuita' }); setCurrentView('queue'); }} />
+        <LoginScreen 
+           initialIsRegistering={loginInitialRegister}
+           onBack={() => setCurrentView('landing')}
+           onGuestLogin={() => { setUser({ email: 'Conta Gratuita' }); setCurrentView('queue'); }} 
+        />
       )}
       
       {currentView === 'queue' && (
@@ -2248,14 +2459,30 @@ export default function App() {
           user={user} queue={queue} setQueue={setQueue} categories={categories} setCategories={setCategories} 
           onStartFight={startFight} onLogout={handleLogout} onClearAll={handleClearAll}
           isPremium={isPremium} logoUrl={logoUrl} setLogoUrl={setLogoUrl} fightHistory={fightHistory}
-          onShowReceipt={(receipt) => setPendingReceipt(receipt)}
+          onShowReceipt={(receipt) => setPendingReceipt(receipt)} plans={plans} setPlans={setPlans}
         />
       )}
       
       {currentView === 'scoreboard' && (
         <ScoreboardScreen 
-          initialFightData={activeFight} onBackToQueue={() => setCurrentView('queue')} 
-          isPremium={isPremium} logoUrl={logoUrl} onFinishFight={handleFinishFight} user={user}
+          initialFightData={activeFight} 
+          onBackToQueue={() => {
+            if (user?.isDemo) {
+               setUser(null);
+               setCurrentView('landing');
+            } else {
+               setCurrentView('queue');
+            }
+          }} 
+          isPremium={isPremium} 
+          logoUrl={logoUrl} 
+          onFinishFight={handleFinishFight} 
+          user={user}
+          onRegisterRequest={() => {
+            setUser(null);
+            setLoginInitialRegister(true);
+            setCurrentView('login');
+          }}
         />
       )}
     </>
