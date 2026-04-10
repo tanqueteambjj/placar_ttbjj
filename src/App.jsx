@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Users, Package, Mail, GripVertical, ArrowRight, LayoutDashboard, MonitorPlay } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Plus, Minus, Sun, Moon, Printer, X, Trophy, LogOut, ListOrdered, Trash2, ChevronLeft, LogIn, Crown, Lock, ImagePlus, History, CreditCard, Calendar, Zap, Loader2, User, CheckCircle, QrCode, FolderPlus, Folder, GitMerge, Edit2, Tag, Users, Package, Mail, GripVertical, ArrowRight, LayoutDashboard, MonitorPlay, Maximize, Minimize, Eye, EyeOff } from 'lucide-react';
 
 // === CONFIGURAÇÃO DO FIREBASE ===
 import { initializeApp } from "firebase/app";
@@ -343,7 +343,7 @@ const PrintBoletim = ({ data, logoUrl, user }) => {
   );
 };
 
-const FighterCard = ({ num, data, setFighter, updateScore, isGreenBelt, isDarkMode, themeClasses }) => {
+const FighterCard = ({ num, data, setFighter, updateScore, isGreenBelt, isDarkMode, themeClasses, cleanMode }) => {
   const bgHeaderColor = isGreenBelt ? 'bg-green-600' : themeClasses.header2Bg;
 
   return (
@@ -364,10 +364,10 @@ const FighterCard = ({ num, data, setFighter, updateScore, isGreenBelt, isDarkMo
         {isGreenBelt && <div className="absolute top-0 right-0 bottom-0 w-4 bg-yellow-400"></div>}
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 group/points">
         <span className={`text-xl font-bold uppercase tracking-[0.2em] mb-1 ${themeClasses.labelColor}`}>Pontos</span>
         <div className={`text-[12rem] md:text-[15rem] leading-none font-black tabular-nums tracking-tighter ${themeClasses.pointsColor}`}>{data.points}</div>
-        <div className="flex gap-2 mt-4 w-full justify-center print:hidden">
+        <div className={`flex gap-2 mt-4 w-full justify-center print:hidden transition-opacity duration-300 ${cleanMode ? 'opacity-0 group-hover/points:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}>
            {[2, 3, 4].map(val => (
              <button key={val} onClick={() => updateScore('points', val)} className={`flex-1 max-w-[90px] py-6 font-black rounded-xl text-3xl transition-all active:scale-95 shadow-md ${themeClasses.btnBg}`}>+{val}</button>
            ))}
@@ -376,21 +376,21 @@ const FighterCard = ({ num, data, setFighter, updateScore, isGreenBelt, isDarkMo
       </div>
 
       <div className={`flex border-t h-44 ${isDarkMode ? 'border-zinc-800' : 'border-gray-200'}`}>
-        <div className={`flex-1 flex flex-col border-r ${themeClasses.advPenBg}`}>
+        <div className={`flex-1 flex flex-col border-r ${themeClasses.advPenBg} group/adv`}>
           <div className="bg-yellow-500 text-black text-center py-2 font-black uppercase tracking-widest text-xs">Vantagens</div>
           <div className="flex-1 flex items-center justify-between px-6">
-            <button onClick={() => updateScore('advantages', -1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Minus size={28} /></button>
+            <button onClick={() => updateScore('advantages', -1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn} ${cleanMode ? 'opacity-0 group-hover/adv:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}><Minus size={28} /></button>
             <span className="text-7xl font-black text-yellow-500 tabular-nums">{data.advantages}</span>
-            <button onClick={() => updateScore('advantages', 1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Plus size={28} /></button>
+            <button onClick={() => updateScore('advantages', 1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn} ${cleanMode ? 'opacity-0 group-hover/adv:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}><Plus size={28} /></button>
           </div>
         </div>
 
-        <div className={`flex-1 flex flex-col ${themeClasses.advPenBg}`}>
+        <div className={`flex-1 flex flex-col ${themeClasses.advPenBg} group/pen`}>
           <div className="bg-red-600 text-white text-center py-2 font-black uppercase tracking-widest text-xs">Punições</div>
           <div className="flex-1 flex items-center justify-between px-6">
-            <button onClick={() => updateScore('penalties', -1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Minus size={28} /></button>
+            <button onClick={() => updateScore('penalties', -1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn} ${cleanMode ? 'opacity-0 group-hover/pen:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}><Minus size={28} /></button>
             <span className="text-7xl font-black text-red-500 tabular-nums">{data.penalties}</span>
-            <button onClick={() => updateScore('penalties', 1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn}`}><Plus size={28} /></button>
+            <button onClick={() => updateScore('penalties', 1)} className={`print:hidden p-3 rounded-full transition-transform active:scale-90 shadow-sm ${themeClasses.circleBtn} ${cleanMode ? 'opacity-0 group-hover/pen:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}><Plus size={28} /></button>
           </div>
         </div>
       </div>
@@ -1837,6 +1837,10 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
   const [showDemoAlert, setShowDemoAlert] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   
+  // Novos estados para Fullscreen e Modo Limpo
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [cleanMode, setCleanMode] = useState(false);
+  
   const [category, setCategory] = useState(initialFightData?.category || '');
   const [belt, setBelt] = useState(initialFightData?.belt || '');
   const [gender, setGender] = useState(initialFightData?.gender || '');
@@ -1900,6 +1904,27 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
     }
     return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
+
+  // Gestão da Tela Cheia
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Erro ao tentar entrar em tela cheia: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const toggleTimer = () => setIsRunning(!isRunning);
 
@@ -1978,10 +2003,12 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
         <div className={`p-4 md:p-6 flex items-center justify-between shadow-xl relative z-10 ${themeClasses.navBg}`}>
           
           <div className="hidden xl:flex items-center gap-6 w-1/3">
-            <button onClick={onBackToQueue} className="p-3 rounded-xl flex items-center gap-2 font-bold tracking-widest text-xs uppercase transition-all text-zinc-500 hover:text-white hover:bg-zinc-800">
-              <ChevronLeft size={16} /> {isDemo ? 'Sair' : 'Fila'}
-            </button>
-            <div className="flex items-center border-l border-zinc-800 pl-6 py-1">
+            {!cleanMode && (
+              <button onClick={onBackToQueue} className="p-3 rounded-xl flex items-center gap-2 font-bold tracking-widest text-xs uppercase transition-all text-zinc-500 hover:text-white hover:bg-zinc-800 shrink-0">
+                <ChevronLeft size={16} /> {isDemo ? 'Sair' : 'Fila'}
+              </button>
+            )}
+            <div className={`flex items-center ${!cleanMode ? 'border-l border-zinc-800 pl-6' : ''} py-1 transition-all`}>
                <img src={logoUrl} alt="Logo" className="h-20 md:h-24 w-auto object-contain mr-6 drop-shadow-lg" />
                <div className="flex flex-col gap-1 w-full">
                  <input type="text" placeholder="CATEGORIA / PESO" value={category} onChange={(e) => setCategory(e.target.value.toUpperCase())} className="text-2xl lg:text-3xl bg-transparent focus:outline-none border-b-2 border-transparent focus:border-blue-600 uppercase font-black w-full tracking-tighter leading-none" />
@@ -1994,12 +2021,12 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
             </div>
           </div>
 
-          <div className="flex-1 flex justify-center items-center gap-8 md:gap-16 relative">
+          <div className="flex-1 flex justify-center items-center gap-8 md:gap-16 relative group/timer">
             {isDemo && <div className="absolute -top-6 bg-yellow-500 text-black px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Modo Demonstração</div>}
             <div className={`text-9xl md:text-[14rem] leading-none font-black tabular-nums tracking-tighter ${timeLeft === 0 ? 'text-blue-500 animate-pulse' : themeClasses.pointsColor}`}>
               {formatTime(timeLeft)}
             </div>
-            <div className="flex flex-col gap-4">
+            <div className={`flex flex-col gap-4 transition-opacity duration-300 ${cleanMode ? 'opacity-0 group-hover/timer:opacity-100' : 'opacity-100'}`}>
               {timeLeft === 0 ? (
                 <button onClick={() => setShowFinishModal(true)} className="bg-blue-600 text-white p-6 rounded-2xl font-black uppercase shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:bg-blue-500 hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
                   <CheckCircle size={40} />
@@ -2015,18 +2042,30 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
           </div>
 
           <div className="flex items-center justify-end gap-1 w-1/3">
-            {/* Botões de Zoom Discretos */}
-            <div className="hidden md:flex items-center opacity-30 hover:opacity-100 transition-opacity mr-2 bg-black/10 rounded-full px-2">
-               <button onClick={() => setZoom(z => Math.max(0.5, z - 0.05))} className={`p-2 rounded-full hover:scale-110 transition-transform ${themeClasses.labelColor}`} title="Diminuir Tela"><Minus size={14} /></button>
-               <span className={`text-[10px] font-black w-9 text-center cursor-pointer ${themeClasses.pointsColor}`} onClick={() => setZoom(1)} title="Restaurar">{Math.round(zoom * 100)}%</span>
-               <button onClick={() => setZoom(z => Math.min(1.5, z + 0.05))} className={`p-2 rounded-full hover:scale-110 transition-transform ${themeClasses.labelColor}`} title="Aumentar Tela"><Plus size={14} /></button>
-            </div>
+            {!cleanMode && (
+              <>
+                {/* Botões de Zoom Discretos */}
+                <div className="hidden md:flex items-center opacity-30 hover:opacity-100 transition-opacity mr-2 bg-black/10 rounded-full px-2">
+                   <button onClick={() => setZoom(z => Math.max(0.5, z - 0.05))} className={`p-2 rounded-full hover:scale-110 transition-transform ${themeClasses.labelColor}`} title="Diminuir Tela"><Minus size={14} /></button>
+                   <span className={`text-[10px] font-black w-9 text-center cursor-pointer ${themeClasses.pointsColor}`} onClick={() => setZoom(1)} title="Restaurar">{Math.round(zoom * 100)}%</span>
+                   <button onClick={() => setZoom(z => Math.min(1.5, z + 0.05))} className={`p-2 rounded-full hover:scale-110 transition-transform ${themeClasses.labelColor}`} title="Aumentar Tela"><Plus size={14} /></button>
+                </div>
+                
+                <button onClick={() => { if (isDemo) { setShowDemoAlert(true); return; } if (isPremium) { window.print() } else { alert("A impressão é um recurso Premium. Acesse a aba 'Minha Conta' para adquirir um plano.") } }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} ${!isPremium && !isDemo ? 'opacity-50' : ''}`} title="Imprimir Resultado">
+                  <Printer size={24} />
+                </button>
+                <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Tema"><Sun size={24} className={isDarkMode ? 'hidden' : 'block'} /><Moon size={24} className={isDarkMode ? 'block' : 'hidden'} /></button>
+                <button onClick={() => { if (isDemo) { setShowDemoAlert(true); return; } setShowSettings(!showSettings) }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Ajustes de Tempo"><Settings size={24} /></button>
+              </>
+            )}
             
-            <button onClick={() => { if (isDemo) { setShowDemoAlert(true); return; } if (isPremium) { window.print() } else { alert("A impressão é um recurso Premium. Acesse a aba 'Minha Conta' para adquirir um plano.") } }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} ${!isPremium && !isDemo ? 'opacity-50' : ''}`} title="Imprimir Resultado">
-              <Printer size={24} />
+            <button onClick={() => setCleanMode(!cleanMode)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title={cleanMode ? "Mostrar Controlos" : "Ocultar Controlos (Modo Limpo)"}>
+              {cleanMode ? <Eye size={24} /> : <EyeOff size={24} />}
             </button>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Tema"><Sun size={24} className={isDarkMode ? 'hidden' : 'block'} /><Moon size={24} className={isDarkMode ? 'block' : 'hidden'} /></button>
-            <button onClick={() => { if (isDemo) { setShowDemoAlert(true); return; } setShowSettings(!showSettings) }} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn}`} title="Ajustes de Tempo"><Settings size={24} /></button>
+
+            <button onClick={toggleFullscreen} className={`p-4 rounded-full shadow-sm ${themeClasses.circleBtn} hidden md:block`} title="Tela Cheia">
+              {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+            </button>
           </div>
         </div>
 
@@ -2094,8 +2133,8 @@ const ScoreboardScreen = ({ initialFightData, onBackToQueue, isPremium, logoUrl,
         )}
 
         <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
-          <FighterCard num={1} data={fighter1} setFighter={setFighter1} updateScore={(type, val) => updateFighterScore(1, type, val)} isGreenBelt={true} isDarkMode={isDarkMode} themeClasses={themeClasses} />
-          <FighterCard num={2} data={fighter2} setFighter={setFighter2} updateScore={(type, val) => updateFighterScore(2, type, val)} isGreenBelt={false} isDarkMode={isDarkMode} themeClasses={themeClasses} />
+          <FighterCard num={1} data={fighter1} setFighter={setFighter1} updateScore={(type, val) => updateFighterScore(1, type, val)} isGreenBelt={true} isDarkMode={isDarkMode} themeClasses={themeClasses} cleanMode={cleanMode} />
+          <FighterCard num={2} data={fighter2} setFighter={setFighter2} updateScore={(type, val) => updateFighterScore(2, type, val)} isGreenBelt={false} isDarkMode={isDarkMode} themeClasses={themeClasses} cleanMode={cleanMode} />
         </div>
       </div>
     </div>
